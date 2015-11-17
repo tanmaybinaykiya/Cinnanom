@@ -1,0 +1,10 @@
+{
+  "name": "rest-service",
+  "version": "0.0.0",
+  "dependencies": {
+    "body-parser": "^1.13.3",
+    "express": "^4.6.1",
+    "jsonwebtoken": "^4.2.2",
+    "mongoose":"^4.2.5"
+  }
+}
