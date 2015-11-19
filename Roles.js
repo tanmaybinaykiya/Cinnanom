@@ -1,6 +1,6 @@
-var Roles = module.exports ={
-  ADMIN: 'admin',
-  OWNER: 'owner',
-  DJ: 'dj',
-  APP: 'app'
+var Roles = module.exports = {
+  ADMIN: 'ADMIN',
+  OWNER: 'OWNER',
+  DJ: 'DJ',
+  APP: 'APP'
 };

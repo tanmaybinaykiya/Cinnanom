@@ -3,20 +3,25 @@ var AppHandler = function() {
     var self = this;
     var acceptedRoles = ['ADMIN', 'APP'];
 
-    self.getPubList = function(request, response) {
-        if (request.params.geoTag) {
-            Pub.findPubByGeoTag(request.params.geoTag, function(err, pubs) {
+    self.getPubListByGeoTag = function(request, response) {
+        if (request.params.long && request.params.lat) {
+            var coords = [];
+            coords[0] = request.params.long;
+            coords[1] = request.params.lat;
+            Pub.findPubByGeoTag(coords, function(err, pubs) {
                 if (err) {
                     response.status(404).json({
                         error: err
                     });
-                } else {
+                } else if(pubs) {
                     response.status(200).json(pubs);
+                } else{
+                    response.status(204).end();
                 }
             });
         } else {
             response.status(404).json({
-                error: 'Geotag not provided'
+                error: 'Geotags not provided'
             });
         }
     };

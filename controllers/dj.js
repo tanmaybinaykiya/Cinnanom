@@ -1,11 +1,14 @@
+var Playlist = require('../models/Playlist')
+
 var DJHandler = function() {
     var self = this;
     var acceptedRoles=['ADMIN','DJ'];
 
     self.createPlaylist =  function(request, response) {
-        
+        //TODO 
+        // verify all params of playlist
         if(request.playlist){
-            // TODO 
+            // TODO
             // add request.playlist.status
             Playlist.createPlaylist(request.playlist, function(err, playlist){
                 if(err){
@@ -27,7 +30,7 @@ var DJHandler = function() {
         // TODO 
         // Authorize
         if (request.params.pubId) {
-            Playlist.findPlaylistbById(request.params.playlistId, function(err, playlist) {
+            Playlist.findPlaylistById(request.params.playlistId, function(err, playlist) {
                 if (err) {
                     response.status(404).json({
                         error: err
@@ -47,7 +50,7 @@ var DJHandler = function() {
          // TODO 
         // Authorize
         if (request.params.playlistId && request.playlist) {
-            Pub.updatePubById(request.params.playlistId, request.playlist, function(err, pub) {
+            Playlist.updatePlaylistById(request.params.playlistId, request.playlist, function(err, pub) {
                 if (err) {
                     response.status(404).json({
                         error: err
@@ -67,7 +70,7 @@ var DJHandler = function() {
         // TODO 
         // Authorize
         if (request.params.playlistId) {
-            Pub.deletePlaylistById(request.params.playlistId, function(err) {
+            Playlist.deletePlaylistById(request.params.playlistId, function(err) {
                 if (err) {
                     response.status(404).json({
                         error: err

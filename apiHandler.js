@@ -1,18 +1,21 @@
 var express = require('express');
 var jwt = require('jsonwebtoken');
 
-var adminHandler = require('./roles/admin');
-var pubHandler = require('./roles/pub');
-var djHandler = require('./roles/dj');
-var appHandler = require('./roles/app');
+var adminHandler = require('./controllers/admin');
+var owner = require('./controllers/owner');
+var djHandler = require('./controllers/dj');
+var appHandler = require('./controllers/app');
+var User = require('./models/User');
 var config = require('./config');
+var authenticator = require('./authenticator');
+var logger = require('./logger');
 
 var router = express.Router();
 
 function verifyUser (role, username, password, callback) {
-	Users.findByUsername(username, function(err, user) {
+	User.findByUsername(username, role, function(err, user) {
 		if (err) {
-			Users.findByEmail(username, function(e, user) {
+			User.findByEmail(username, role, function(e, user) {
 				if (e) {
 					callback('User not found');
 				} else if (user.password !== password) {
@@ -20,15 +23,17 @@ function verifyUser (role, username, password, callback) {
 				} else if (user.role !== role) {
 					callback('Authorization failed');
 				} else {
-					callback(null, role, user);
+					callback(null, user);
 				}
 			});
-		} else if (user.password !== password) {
+		} else if (user && user.password !== password) {
 			callback('Username password do not match');
-		} else if (user.role !== role) {
+		} else if (user && user.role !== role) {
 			callback('Authorization failed');
-		} else {
-			callback(null, role, user);
+		} else if (user){
+			callback(null, user);
+		} else{
+			callback('Some error');
 		}
 	});
 }
@@ -42,7 +47,7 @@ function generateToken (req, res) {
 			if (!err) {
 				var access_token = jwt.sign({
 					role: user.role,
-					user_id: user.id
+					user_id: user._id
 				}, config.secret, {
 					expiresInMinutes: config.tokenExpiryInMinutes // expires in 1 hour
 				});
@@ -61,31 +66,11 @@ function generateToken (req, res) {
 }
 
 router.use(function(req, res, next) {
-	console.log("[" + Date.now() + "] Req: " + req.route);
+	logger.access("[" + Date.now() + "] Request: [" + req.url + "] "+ JSON.stringify(req.body));
 	next();
 });
 
-router.use(function(req, res, next) {
-	token = req.get("Authorization");
-	jwt.verify(token, config.secret, function(err, decoded) {
-		if (!err) {
-			req.decoded = decoded;
-		} else if (err.name === 'JsonWebTokenError') {
-			res.status(401).json({
-				error: err.message
-			});
-		} else if (err.name === 'TokenExpiredError') {
-			res.status(401).json({
-				error: 'TOKEN_EXPIRED'
-			});
-		} else {
-			res.status(500).json({
-				error: 'INTERNAL_SERVER_ERROR'
-			});
-		}
-	});
-	next();
-});
+// router.use(authenticator);
 
 router.route('/token')
 	.post(generateToken);
@@ -108,8 +93,8 @@ router.route('/pub/:pubId/dj')
 	.put(owner.createDJAccount);
 
 router.route('/pub/:pubId/dj/:djId')
-	.delete(owner.deleteDJAccount)
-	.post(djHandler.joinPub);
+	.delete(owner.deleteDJAccount);
+	// .post(djHandler.joinPub);
 
 router.route('/pub/:pubId/playlist')
 	.put(djHandler.createPlaylist);
@@ -119,8 +104,8 @@ router.route('/pub/:pubId/playlist/:playlistId')
 	.post(djHandler.updatePlaylist)
 	.delete(djHandler.deletePlaylist);
 
-router.route('/pub/:geoTag')
-	.get(appHandler.getPubList);
+router.route('/pub/:long/:lat')
+	.get(appHandler.getPubListByGeoTag);
 
 router.route('/pub/:pubId/playlist')
 	.get(appHandler.getCurrentPlaylist);

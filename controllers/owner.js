@@ -1,19 +1,22 @@
-var Pub  = require('../models/Pub');
-var User =  require('../models/User');
+var Pub = require('../models/Pub');
+var User = require('../models/User');
 var Roles = require('../Roles');
-
+var logger = require('../logger')
 var Owner = function() {
     var self = this;
     var acceptedRoles = ['ADMIN', 'PUB'];
 
     self.registerPub = function(request, response) {
-        if (request.pub.name && request.pub.gpsLocation) {
-            Pub.create({
-                name: request.pub.name,
-                address: '' || request.pub.address,
-                gpsLocation: request.pub.gpsLocation,
-                genre: '' || request.pub.genre
+        if (request.body.name && request.body.loc) {
+            logger.info("self.registerPub")
+            Pub.registerPub({
+                name: request.body.name,
+                address: '' || request.body.address,
+                loc: request.body.loc,
+                genre: '' || request.body.genre,
+                playlists: request.body.playlists
             }, function(err, pub) {
+                logger.info("self.registerPub cb")
                 if (err) {
                     response.status(404).json({
                         error: 'INTERNAL_SERVER_ERROR'
