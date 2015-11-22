@@ -7,7 +7,8 @@ var SongSchema = new mongoose.Schema({
 	album: String,
 	year: Number,
 	composer: String,
-	lyrics: String
+	lyrics: String,
+	duration: Number // [seconds]
 });
 
-module.exports = mongoose.model("Song", SongSchema);
+module.exports = mongoose.model('Song', SongSchema);

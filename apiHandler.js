@@ -5,115 +5,77 @@ var adminHandler = require('./controllers/admin');
 var owner = require('./controllers/owner');
 var djHandler = require('./controllers/dj');
 var appHandler = require('./controllers/app');
-var User = require('./models/User');
 var config = require('./config');
-var authenticator = require('./authenticator');
+var security = require('./security');
 var logger = require('./logger');
+var Role = require('./enums/Role');
 
 var router = express.Router();
 
-function verifyUser (role, username, password, callback) {
-	User.findByUsername(username, role, function(err, user) {
-		if (err) {
-			User.findByEmail(username, role, function(e, user) {
-				if (e) {
-					callback('User not found');
-				} else if (user.password !== password) {
-					callback('Email password do not match');
-				} else if (user.role !== role) {
-					callback('Authorization failed');
-				} else {
-					callback(null, user);
-				}
-			});
-		} else if (user && user.password !== password) {
-			callback('Username password do not match');
-		} else if (user && user.role !== role) {
-			callback('Authorization failed');
-		} else if (user){
-			callback(null, user);
-		} else{
-			callback('Some error');
-		}
-	});
-}
-
-function generateToken (req, res) {
-	var role = req.body.role,
-		username = req.body.username,
-		password = req.body.password;
-	if (role && username && password) {
-		verifyUser(role, username, password, function(err, user) {
-			if (!err) {
-				var access_token = jwt.sign({
-					role: user.role,
-					user_id: user._id
-				}, config.secret, {
-					expiresInMinutes: config.tokenExpiryInMinutes // expires in 1 hour
-				});
-				res.json({
-					token: access_token
-				});
-			} else {
-				res.status(401).json({
-					error: err
-				});
-			}
-		});
-	} else {
-		res.status(401).end();
-	}
-}
-
 router.use(function(req, res, next) {
-	logger.access("[" + Date.now() + "] Request: [" + req.url + "] "+ JSON.stringify(req.body));
+	logger.info("[" + Date.now() + "] Request: [" + req.url + "] Body: [" + JSON.stringify(req.body) + "]");
 	next();
 });
 
-// router.use(authenticator);
-
 router.route('/token')
-	.post(generateToken);
-	
-router.route('/owner/register')
-	.put(adminHandler.createOwner);
+	.post(security.generateToken);
 
-router.route('/owner/:ownerId')	
-	.delete(adminHandler.deleteOwner);
+router.route('/owner/register')
+	.put(security.authorize(Role.ADMIN), adminHandler.createOwner);
+
+router.route('/owner/:ownerId')
+	.delete(security.authorize(Role.ADMIN), adminHandler.deleteOwner);
 
 router.route('/pub/register')
-	.put(owner.registerPub);
+	.put(security.authorize(Role.OWNER), owner.registerPub);
 
 router.route('/pub/:pubId')
-	.delete(owner.deletePub)
-	.get(owner.getPubDetails)
-	.post(owner.updatePubDetails);
+	.delete(security.authorize(Role.OWNER), owner.deletePub)
+	.get(security.authorize(Role.OWNER), owner.getPubDetails)
+	.post(security.authorize(Role.OWNER), owner.updatePubDetails);
 
 router.route('/pub/:pubId/dj')
-	.put(owner.createDJAccount);
+	.put(security.authorize(Role.OWNER), owner.createDJAccount);
 
 router.route('/pub/:pubId/dj/:djId')
-	.delete(owner.deleteDJAccount);
-	// .post(djHandler.joinPub);
+	.delete(security.authorize(Role.OWNER), owner.deleteDJAccount);
+// .post(djHandler.joinPub);
 
 router.route('/pub/:pubId/playlist')
-	.put(djHandler.createPlaylist);
+	.put(security.authorize(Role.DJ), djHandler.createPlaylist);
 
 router.route('/pub/:pubId/playlist/:playlistId')
-	.get(djHandler.getPlaylist)
-	.post(djHandler.updatePlaylist)
-	.delete(djHandler.deletePlaylist);
+	.get(security.authorize(Role.DJ), djHandler.getPlaylist)
+	.post(security.authorize(Role.DJ), djHandler.updatePlaylist)
+	.delete(security.authorize(Role.DJ), djHandler.deletePlaylist);
 
-router.route('/pub/:long/:lat')
-	.get(appHandler.getPubListByGeoTag);
-
-router.route('/pub/:pubId/playlist')
-	.get(appHandler.getCurrentPlaylist);
+router.route('/pub/:pubId/playlist/:playlistId/song')
+	.put(security.authorize(Role.DJ), djHandler.addSong);
 
 router.route('/pub/:pubId/playlist/:playlistId/song/:songId')
-	.post(appHandler.upvoteSong);
+	.delete(security.authorize(Role.DJ), djHandler.removeSong);
 
-//to be deprecated
-router.get('/test', generateToken);
+router.route('/pub/:pubId/playlist/:playlistId/song/:songId')
+	.post(security.authorize(Role.DJ), djHandler.updateSong);
+
+router.route('/user/register')
+	.put(appHandler.register);
+
+router.route('/pub/:pubId/playlist')
+	.get(security.authorize(Role.APP), appHandler.getCurrentPlaylist);
+
+router.route('/pub/:long/:lat')
+	.get(security.authorize(Role.APP), appHandler.getPubListByGeoTag);
+
+router.route('/pub/:pubId/playlist/:playlistId/song/:songId/upvote')
+	.post(security.authorize(Role.APP), appHandler.upvoteSong);
+
+router.route('/test')
+	.get(function(req, res, next) {
+		logger.info("test");
+		next();
+	}, function(req, res) {
+		res.status(204).end();
+	});
 
 module.exports = router;

@@ -1,6 +1,6 @@
 var Pub = require('../models/Pub');
 var User = require('../models/User');
-var Roles = require('../Roles');
+var Roles = require('../enums/Role');
 var logger = require('../logger')
 var Owner = function() {
     var self = this;
@@ -96,7 +96,7 @@ var Owner = function() {
     };
 
     self.createDJAccount = function(request, response) {
-        if (request.body.username && request.body.password) {
+        if (request.params.pubId && request.body.username && request.body.password) {
             User.createUser({
                 username: request.body.username,
                 password: request.body.password,
@@ -113,7 +113,7 @@ var Owner = function() {
             });
         } else {
             response.status(404).json({
-                error: 'User or password not passed'
+                error: 'pubId, Username or password not passed'
             });
         }
     };

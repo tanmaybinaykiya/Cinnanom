@@ -1,5 +1,6 @@
-var mongoose = require('mongoose');
-var logger = require('../logger');
+var mongoose = require('mongoose'),
+	logger = require('../logger'),
+	PlaylistState = require('../enums/PlaylistState');
 
 var PubSchema = new mongoose.Schema({
 	name: String,
@@ -15,37 +16,34 @@ var PubSchema = new mongoose.Schema({
 	}]
 });
 
-
 var Pub = mongoose.model("Pub", PubSchema);
 
-var PlaylistManager = function() {
+var PubManager = function() {
 	var self = this;
 	this.registerPub = function(pub, cb) {
-		logger.info("PlaylistManager.registerPub")
+		logger.info("PubManager.registerPub")
 		Pub.create(pub, function(err, doc) {
 			logger.info("Pub.create cb")
 			if (err) {
-				logger.info(err);
-				cb(err);
-			} else {
-				cb(null, doc);
+				logger.error(err);
 			}
+			cb(err, doc);
 		});
 	}
 
 	this.deletePubById = function(pubId, cb) {
 		Pub.findByIdAndRemove(pubId, function(e) {
 			if (e) {
-				cb(e);
-			} else {
-				cb(null);
+				logger.error(e.stack.split("\n"));
 			}
+			cb(e);
 		});
 	}
 
 	this.findPubById = function(pubId, cb) {
 		Pub.findById(pubId, function(err, pub) {
 			if (err) {
+				logger.error(err.stack.split("\n"));
 				cb(err);
 			} else if (pub) {
 				cb(null, pub);
@@ -62,10 +60,9 @@ var PlaylistManager = function() {
 			upsert: false
 		}, function(err, pub) {
 			if (err) {
-				cb(err);
-			} else {
-				cb(null, pub);
+				logger.error(err.stack.split("\n"));
 			}
+			cb(err, pub);
 		});
 	}
 
@@ -78,11 +75,88 @@ var PlaylistManager = function() {
 			}
 		}).limit(10).exec(function(err, locations) {
 			if (err) {
-				cb(err);
+				logger.error(err.stack.split("\n"));
 			}
-			cb(null, err);
+			cb(err, locations);
 		});
+	}
+
+	this.addPlaylist = function(pubId, playlist, cb) {
+		this.findPubById(pubId, function(err, pub) {
+			if (!err && pub) {
+				pub.playlists.push(playlist);
+				pub.save(function(e, pubFound) {
+					if (e) {
+						logger.error(e.stack.split("\n"));
+					}
+					cb(e, pubFound);
+				});
+			} else if (err) {
+				cb(err);
+			} else {
+				cb('No Pub found with given id');
+			}
+		});
+	}
+
+	this.getFilteredPlaylist = function(pubId, filters, limit, cb) {
+		Pub.findOne({
+				_id: pubId
+			})
+			.populate({
+				path: 'playlists',
+				match: filters,
+				options: {
+					limit: limit
+				}
+			})
+			.exec(function(err, Pub) {
+				if (err) {
+					cb(err);
+				} else if (Pub && Pub.playlists && Pub.playlists[0]) {
+					cb(null, Pub.playlists[0]);
+				} else if (Pub && Pub.playlists) {
+					cb(null, null);
+				} else if (Pub) {
+					cb('No playlists found for pub');
+				} else {
+					cb('Invalid pub');
+				}
+			});
+	}
+
+	this.setActivePlaylist = function(pubId, playlistId, state, cb) {
+		this.getFilteredPlaylist(pubId, {
+			_id: playlistId
+		}, 1, function(err, pub) {
+			if(err){
+				cb(err);
+				return;
+			}
+			else if(state === pub.playlists[0].state ){
+				cb(204);
+				return;
+			}
+			else if (pub && pub.playlists && pub.playlists[0]){
+				pub.playlists[0].state=state;
+			} else{
+				cb('Not FOUND')
+				return;
+			}
+			pub.save(function(e, pubFound) {
+				if (e) {
+					logger.error(e.stack.split("\n"));
+				}
+				cb(e, pubFound);
+			});
+		});
+	}
+
+	this.getActivePlaylist = function(pubId, limit, cb) {
+		this.getFilteredPlaylist(pubId, {
+			state: PlaylistState.ACTIVE
+		}, limit, cb);
 	}
 }
 
-module.exports = new PlaylistManager();
+module.exports = new PubManager();

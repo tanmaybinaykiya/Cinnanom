@@ -1,7 +1,33 @@
 var Pub = require('../models/Pub')
+var User = require('../models/User')
+var Role = require('../enums/Role')
+
 var AppHandler = function() {
     var self = this;
     var acceptedRoles = ['ADMIN', 'APP'];
+
+    self.register = function(request, response) {
+        if (request.body.username && request.body.password) {
+            User.createUser({
+                username: request.body.username,
+                password: request.body.password,
+                email: '' || request.body.email,
+                role: Role.APP
+            }, function(err, user) {
+                if (err) {
+                    response.status(404).json({
+                        error: err
+                    });
+                } else {
+                    response.status(201).json(user);
+                }
+            });
+        } else {
+            response.status(404).json({
+                error: 'User or password not passed'
+            });
+        }
+    };
 
     self.getPubListByGeoTag = function(request, response) {
         if (request.params.long && request.params.lat) {
@@ -13,9 +39,9 @@ var AppHandler = function() {
                     response.status(404).json({
                         error: err
                     });
-                } else if(pubs) {
+                } else if (pubs) {
                     response.status(200).json(pubs);
-                } else{
+                } else {
                     response.status(204).end();
                 }
             });
@@ -30,32 +56,22 @@ var AppHandler = function() {
         // TODO 
         // implement filters
         if (request.params.pubId) {
-            Pub.findPubById(request.params.pubId, function(err, pub) {
-                if (err) {
-                    response.status(404).json({
-                        error: err
-                    });
-                } else {
-                    if (Pub.playlists) {
-                        var found =false;
-                        for (playlist in playlists) {
-                            if (playlists[playlist].status === "ACTIVE") {
-                                response.status(200).json(playlists[playlist]);
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found) {
-                            response.status(404).end();
-                        }
-                    } else {
-                        response.status(204).end();
-                    }
+            var limit = 20;
+            if (request.params.pageSize) {
+                limit = request.params.pageSize;
+            }
+            Pub.getActivePlaylist(request.params.pubId, limit, function(err, playlist){
+                if(err){
+                    response.status(500).json({error:err});
+                }else if(playlist){
+                    response.status(200).json(playlist);
+                }else{
+                    response.status(404).json({error:'No ACTIVE Playlist found'});
                 }
             });
         } else {
             response.status(404).json({
-                error: 'PlaylistId not provided'
+                error: 'PubId not provided'
             });
         }
     };
@@ -65,29 +81,17 @@ var AppHandler = function() {
         // authorize
         // check pub-playlist association
         if (request.params.pubId && request.params.playlistId && request.params.songId) {
-            Playlist.getPlaylistById(request.params.playlistId, function(err, playlist) {
+            Playlist.upvoteSong(playlistId, songId, function(err) {
                 if (err) {
-                    response.status(404).json({
+                    response.status(500).json({
                         error: err
                     });
+                } else {
+                    response.status(200).end();
                 }
-                else{
-                    var found = false;
-                    for(song in playlist.songs){
-                        if(request.params.songId === playlist.songs[song].id){
-                            playlist.songs[song].upvoteCount = playlist.songs[song].upvoteCount++;
-                            response.status(200).end();
-                            found=true;
-                            break;
-                        }
-                    }
-                    if(!found){
-                        response.status(404).json({
-                            error: 'Song not found in playlist'
-                        });
-                    }                    
-                }
-            });
+            })
+
+
         } else {
             response.status(404).json({
                 error: 'PlaylistId or SongId not provided'
