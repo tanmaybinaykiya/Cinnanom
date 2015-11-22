@@ -5,7 +5,6 @@ var logger = require('./logger');
 var config = require('./config');
 
 function decode(req, cb) {
-    logger.info("decode")
     token = req.get("Authorization") || req.query.access_token || req.body.access_token || req.headers['x-access-token'];;
     jwt.verify(token, config.secret, function(err, decoded) {
         if (!err) {
@@ -85,7 +84,6 @@ var security = module.exports = new function() {
                         error: err
                     });
                 } else if (!err && decoded && decoded.role === role) {
-                    logger.info("decoded: " + JSON.stringify(decoded));
                     next();
                 } else {
                     res.status(403).json({

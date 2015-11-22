@@ -13,7 +13,7 @@ var Role = require('./enums/Role');
 var router = express.Router();
 
 router.use(function(req, res, next) {
-	logger.info("[" + Date.now() + "] Request: [" + req.url + "] Body: [" + JSON.stringify(req.body) + "]");
+	logger.info("\n\t" + /*"[" + Date.now() + "] "+*/req.method+": /api" + req.url + "\n\t" + JSON.stringify(req.body));
 	next();
 });
 
@@ -75,7 +75,7 @@ router.route('/test')
 		logger.info("test");
 		next();
 	}, function(req, res) {
-		res.status(204).end();
+		res.status(204).json({});
 	});
 
 module.exports = router;

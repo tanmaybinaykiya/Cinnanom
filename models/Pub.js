@@ -11,8 +11,11 @@ var PubSchema = new mongoose.Schema({
 		index: '2d' // create the geospatial index
 	},
 	playlists: [{
-		type: mongoose.Schema.Types.ObjectId,
-		ref: 'Playlist'
+		details: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'Playlist'
+		},
+		state: 'String'
 	}]
 });
 
@@ -69,21 +72,27 @@ var PubManager = function() {
 	this.findPubByGeoTag = function(coords, cb) {
 		var maxDistance = 5 / 6371;
 		Pub.find({
-			loc: {
-				$near: coords,
-				$maxDistance: maxDistance
-			}
-		}).limit(10).exec(function(err, locations) {
-			if (err) {
-				logger.error(err.stack.split("\n"));
-			}
-			cb(err, locations);
-		});
+				loc: {
+					$near: coords,
+					$maxDistance: maxDistance
+				}
+			})
+			.limit(10)
+			.exec(function(err, locations) {
+				if (err) {
+					logger.error(err.stack.split("\n"));
+				}
+				cb(err, locations);
+			});
 	}
 
-	this.addPlaylist = function(pubId, playlist, cb) {
+	this.addPlaylist = function(pubId, playlistDetails, cb) {
 		this.findPubById(pubId, function(err, pub) {
 			if (!err && pub) {
+				playlist = {
+					details: playlistDetails,
+					state: PlaylistState.INACTIVE
+				}
 				pub.playlists.push(playlist);
 				pub.save(function(e, pubFound) {
 					if (e) {
@@ -100,27 +109,25 @@ var PubManager = function() {
 	}
 
 	this.getFilteredPlaylist = function(pubId, filters, limit, cb) {
-		Pub.findOne({
+		Pub.find({
 				_id: pubId
-			})
-			.populate({
-				path: 'playlists',
+			}).populate({
+				path: 'playlists.details',
 				match: filters,
-				options: {
-					limit: limit
-				}
+				limit: limit
 			})
-			.exec(function(err, Pub) {
+			.exec(function(err, pubs) {
 				if (err) {
+					logger.error(err);
 					cb(err);
-				} else if (Pub && Pub.playlists && Pub.playlists[0]) {
-					cb(null, Pub.playlists[0]);
-				} else if (Pub && Pub.playlists) {
-					cb(null, null);
-				} else if (Pub) {
-					cb('No playlists found for pub');
+				} else if (pubs && pubs[0] && pubs[0].playlists && pubs[0].playlists[0] && pubs[0].playlists[0].details) {
+					cb(null, pubs);
 				} else {
-					cb('Invalid pub');
+					logger.debug('pubs: ' + pubs);
+					logger.debug('pubs0: ' + pubs[0]);
+					logger.debug('playlists: ' + pubs[0].playlists);
+					logger.debug('playlists0: ' + pubs[0].playlists[0]);
+					cb('INTERNAL_ERROR');
 				}
 			});
 	}
@@ -128,22 +135,24 @@ var PubManager = function() {
 	this.setActivePlaylist = function(pubId, playlistId, state, cb) {
 		this.getFilteredPlaylist(pubId, {
 			_id: playlistId
-		}, 1, function(err, pub) {
-			if(err){
+		}, 5, function(err, pubs) {
+			if (err) {
 				cb(err);
 				return;
-			}
-			else if(state === pub.playlists[0].state ){
-				cb(204);
-				return;
-			}
-			else if (pub && pub.playlists && pub.playlists[0]){
-				pub.playlists[0].state=state;
-			} else{
+			} else if (pubs && pubs[0] && pubs[0].playlists && pubs[0].playlists[0]) {
+				if (state === pubs[0].playlists[0].state) {
+					cb(204);
+					return;
+				}
+				pubs[0].playlists[0].state = state;
+			} else {
+				// logger.info("pub:", pub);
+				// logger.info("playlists:", pub.playlists);
+				// logger.info("playlists[0]:", pub.playlists[0]);
 				cb('Not FOUND')
 				return;
 			}
-			pub.save(function(e, pubFound) {
+			pubs[0].save(function(e, pubFound) {
 				if (e) {
 					logger.error(e.stack.split("\n"));
 				}
@@ -153,9 +162,32 @@ var PubManager = function() {
 	}
 
 	this.getActivePlaylist = function(pubId, limit, cb) {
-		this.getFilteredPlaylist(pubId, {
-			state: PlaylistState.ACTIVE
-		}, limit, cb);
+		Pub.find({
+				_id: pubId
+			}).populate({
+				path: 'playlists',
+				match: {
+					state: PlaylistState.ACTIVE
+				},
+				limit: 5
+			})
+			.populate('playlists.details')
+			.populate('playlists.details.songs')
+			.populate('playlists.details.songs.details')
+			.exec(function(err, pubs) {
+				if (err) {
+					logger.error(err);
+					cb(err);
+				} else if (pubs && pubs[0] && pubs[0].playlists && pubs[0].playlists[0] && pubs[0].playlists[0].details) {
+					cb(null, pubs[0].playlists[0].details);
+				} else {
+					logger.debug('pubs: ' + pubs);
+					logger.debug('pubs0: ' + pubs[0]);
+					logger.debug('playlists: ' + pubs[0].playlists);
+					logger.debug('playlists0: ' + pubs[0].playlists[0]);
+					cb('INTERNAL_ERROR');
+				}
+			});
 	}
 }
 

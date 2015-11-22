@@ -4,6 +4,8 @@ var async = require('async');
 var hostname = "localhost";
 var port = 8080;
 
+http.globalAgent.maxSockets = 50
+
 function getCall(path, cb) {
     var options = {
         host: hostname,
@@ -12,13 +14,13 @@ function getCall(path, cb) {
         method: 'GET'
     };
     var req = http.request(options, function(res) {
-
         res.on('data', function(data) {
             if (res.statusCode > 300) {
                 if (data) {
-
+                    cb(res.statusCode + '' + data);
+                    return;
                 }
-                cb(res.statusCode + ('' || data));
+                cb(res.statusCode);
                 return;
             }
             console.log("data:");
@@ -48,10 +50,9 @@ function postCall(path, obj, cb) {
     }
     var req = http.request(options, function(res) {
         console.log("statusCode: ", res.statusCode);
-
         res.on('data', function(d) {
             if (res.statusCode > 300) {
-                cb(res.statusCode + ('' || d));
+                cb(res.statusCode);
                 return;
             }
             req.end();
@@ -342,14 +343,14 @@ function getPubListByGeoTag(next) {}
 
 function setPlaylistActive(next) {
     console.log('setPlaylistActive');
-    postCall('/pub/'+pub._id+'/playlist/'+playlist._id+'?state=ACTIVE&access_token=' + djToken, null, function(err, obj) {
+    postCall('/pub/' + pub._id + '/playlist/' + playlist._id + '?state=ACTIVE&access_token=' + djToken, '', function(err, obj) {
         if (err) {
             console.log("err:" + err);
         } else {
             console.log("playlist ACTIVE");
             next();
         }
-    })
+    });
 }
 
 function getCurrentPlaylist(next) {
@@ -360,7 +361,7 @@ function getCurrentPlaylist(next) {
         } else if (obj) {
             console.log("playlist:", JSON.stringify(obj));
             userPlaylist = obj;
-            song = obj.songs[0];
+            song = obj.songs[0].details;
             next();
         } else {
             console.log("no playlist:");
@@ -383,25 +384,26 @@ function testCall(next) {
 
 // testCall();
 async.waterfall([
-    getAdminToken,
-    registerOwner,
-    getOwnerToken,
-    registerPub,
-    getPubDetails,
-    registerDJ,
-    getDJToken,
-    createPlaylist,
-    getPlayList,
-    setPlaylistActive,
-    registerUser,
-    getUserToken,
-    getCurrentPlaylist,
-    upvoteSong,
-    updateSongType,
-    updateSongState
-], function(err, result) {
-    if (err) {
-        console.error(err);
-    }
-    console.log("DONE");
+        // testCall,
+        getAdminToken,
+        registerOwner,
+        getOwnerToken,
+        registerPub,
+        getPubDetails,
+        registerDJ,
+        getDJToken,
+        createPlaylist,
+        getPlayList,
+        setPlaylistActive,
+        registerUser,
+        getUserToken,
+        getCurrentPlaylist,
+        upvoteSong,
+        updateSongType,
+        updateSongState
+    ], function(e, result) {
+        if (e) {
+            console.error(e);
+        }
+        console.log("DONE");
 });

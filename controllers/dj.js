@@ -88,7 +88,7 @@ var DJHandler = function() {
                         error: err
                     });
                 } else {
-                    response.status(200).end();
+                    response.status(200).json({});
                 }
             });
         } else {

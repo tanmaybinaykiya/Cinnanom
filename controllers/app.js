@@ -1,10 +1,9 @@
-var Pub = require('../models/Pub')
-var User = require('../models/User')
-var Role = require('../enums/Role')
+var Pub = require('../models/Pub'),
+    User = require('../models/User'),
+    Role = require('../enums/Role');
 
 var AppHandler = function() {
     var self = this;
-    var acceptedRoles = ['ADMIN', 'APP'];
 
     self.register = function(request, response) {
         if (request.body.username && request.body.password) {
@@ -15,7 +14,7 @@ var AppHandler = function() {
                 role: Role.APP
             }, function(err, user) {
                 if (err) {
-                    response.status(404).json({
+                    response.status(500).json({
                         error: err
                     });
                 } else {
@@ -36,7 +35,7 @@ var AppHandler = function() {
             coords[1] = request.params.lat;
             Pub.findPubByGeoTag(coords, function(err, pubs) {
                 if (err) {
-                    response.status(404).json({
+                    response.status(500).json({
                         error: err
                     });
                 } else if (pubs) {
@@ -60,13 +59,17 @@ var AppHandler = function() {
             if (request.params.pageSize) {
                 limit = request.params.pageSize;
             }
-            Pub.getActivePlaylist(request.params.pubId, limit, function(err, playlist){
-                if(err){
-                    response.status(500).json({error:err});
-                }else if(playlist){
+            Pub.getActivePlaylist(request.params.pubId, limit, function(err, playlist) {
+                if (err) {
+                    response.status(500).json({
+                        error: err
+                    });
+                } else if (playlist) {
                     response.status(200).json(playlist);
-                }else{
-                    response.status(404).json({error:'No ACTIVE Playlist found'});
+                } else {
+                    response.status(404).json({
+                        error: 'No ACTIVE Playlist found'
+                    });
                 }
             });
         } else {
@@ -87,17 +90,15 @@ var AppHandler = function() {
                         error: err
                     });
                 } else {
-                    response.status(200).end();
+                    response.status(200).json({});
                 }
-            })
-
-
+            });
         } else {
             response.status(404).json({
                 error: 'PlaylistId or SongId not provided'
             });
         }
     };
-}
+};
 
 module.exports = new AppHandler();

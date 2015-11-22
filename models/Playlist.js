@@ -10,7 +10,6 @@ var mongoose = require('mongoose'),
 var PlaylistSchema = new mongoose.Schema({
 	name: String,
 	genre: String,
-	state: String,
 	songs: [{
 		details: {
 			type: mongoose.Schema.Types.ObjectId,
@@ -38,7 +37,7 @@ var PlaylistManager = function() {
 		_.each(playlist.songs, function(song, index, songs) {
 			if (song.details && !((song.details instanceof mongoose.Types.ObjectId)) && song.details.name) {
 				var songDetails = new Song(song.details);
-				logger.info('song Details', JSON.stringify(songDetails));
+				logger.debug('song Details', JSON.stringify(songDetails));
 				song.details._id = songDetails._id;
 				songDetails.save(function(err) {
 					if (err) {
@@ -48,7 +47,7 @@ var PlaylistManager = function() {
 				});
 			}
 			if (song.details._id) {
-				logger.info('song already stored at : ' + song.details._id);
+				logger.debug('song already stored at : ' + song.details._id);
 				newPlaylist.songs[index] = {
 					details: song.details._id,
 					state: song.state || 'QUEUED',
