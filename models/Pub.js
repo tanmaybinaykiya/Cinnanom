@@ -17,7 +17,10 @@ var PubSchema = new mongoose.Schema({
 		},
 		state: 'String'
 	}]
+}, {
+	strict: true
 });
+
 
 var Pub = mongoose.model("Pub", PubSchema);
 
@@ -108,6 +111,8 @@ var PubManager = function() {
 		});
 	}
 
+	
+
 	this.getFilteredPlaylist = function(pubId, filters, limit, cb) {
 		Pub.find({
 				_id: pubId
@@ -123,10 +128,11 @@ var PubManager = function() {
 				} else if (pubs && pubs[0] && pubs[0].playlists && pubs[0].playlists[0] && pubs[0].playlists[0].details) {
 					cb(null, pubs);
 				} else {
-					logger.debug('pubs: ' + pubs);
-					logger.debug('pubs0: ' + pubs[0]);
-					logger.debug('playlists: ' + pubs[0].playlists);
-					logger.debug('playlists0: ' + pubs[0].playlists[0]);
+					logger.info('pubs: ' + pubs);
+					logger.info('pubs0: ' + pubs[0]);
+					logger.info('playlists: ' + pubs[0].playlists);
+					logger.info('playlists0: ' + pubs[0].playlists[0]);
+					logger.info('playlists0Details: ' + pubs[0].playlists[0].details);
 					cb('INTERNAL_ERROR');
 				}
 			});
@@ -171,14 +177,18 @@ var PubManager = function() {
 				},
 				limit: 5
 			})
-			.populate('playlists.details')
-			.populate('playlists.details.songs')
-			.populate('playlists.details.songs.details')
 			.exec(function(err, pubs) {
 				if (err) {
 					logger.error(err);
 					cb(err);
 				} else if (pubs && pubs[0] && pubs[0].playlists && pubs[0].playlists[0] && pubs[0].playlists[0].details) {
+					logger.info('pubs: ' + JSON.stringify(pubs));
+					pubs[0]
+						.populate('playlists.details')
+						.populate('playlists.details.songs')
+						.populate('playlists.details.songs.details')
+						.execPopulate();
+
 					cb(null, pubs[0].playlists[0].details);
 				} else {
 					logger.debug('pubs: ' + pubs);

@@ -77,13 +77,13 @@ var security = module.exports = new function() {
     }
     self.authorize = function(role) {
         return function(req, res, next) {
-            logger.debug("auth func")
             decode(req, function(err, decoded) {
                 if (err) {
                     res.status(401).json({
                         error: err
                     });
                 } else if (!err && decoded && decoded.role === role) {
+                    logger.info("Role: ", role);
                     next();
                 } else {
                     res.status(403).json({

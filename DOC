@@ -8,12 +8,12 @@ P1 [done]	register pub [owner token]
 P1 [done]	register dj [owner token] 
 
 P1 [done]	get token for dj 
-P1 [done]	create playlist [dj token] // for playlists handle both, song-object ids as well as song json 
+P1 [broken]	create playlist [dj token] // for playlists handle both, song-object ids as well as song json 
 
-P1 [done]	get playlist [dj token] // filters pagination .. always sorted by voteCount 
+P1 [ready for testing]	get playlist [dj token] // filters pagination .. always sorted by voteCount 
 P1 [done]	update playlist : [dj token] 
 P2 [not done]		add/remove songs 		
-P1 [not done]		change song state // states: Now playing, Next, Queued,  ; assert playlist active
+P1 [ready for testing]		change song state // states: Now playing, Next, Queued,  ; assert playlist active
 
 P1 [done]	register user // contains geotag 
 P1 [done]	get user token // contains geotag 

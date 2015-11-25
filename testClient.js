@@ -83,6 +83,10 @@ function putCall(path, obj, cb) {
     var req = http.request(options, function(res) {
         console.log("statusCode: ", res.statusCode);
         res.on('data', function(d) {
+            if (res.statusCode > 300) {
+                cb(res.statusCode);
+                return;
+            }
             req.end();
             cb(null, JSON.parse(d));
             return;
@@ -224,23 +228,23 @@ function createPlaylist(next) {
         state: 'INACTIVE',
         songs: [{
             details: {
-                name: 'String',
-                genre: 'String',
-                artist: 'String',
-                album: 'String',
-                year: 2010,
-                composer: 'String',
-                lyrics: 'String'
+                song_name: 'Stringsssssssssssssss',
+                song_genre: 'String',
+                song_artist: 'String',
+                song_album: 'String',
+                song_year: 2010,
+                song_composer: 'String',
+                song_lyrics: 'String'
             }
         }, {
             details: {
-                name: 'String2',
-                genre: 'String2',
-                artist: 'String2',
-                album: 'String2',
-                year: 2010,
-                composer: 'String2',
-                lyrics: 'String2'
+                song_name: 'String2ssssssssssssssss',
+                song_genre: 'String2',
+                song_artist: 'String2',
+                song_album: 'String2',
+                song_year: 2010,
+                song_composer: 'String2',
+                song_lyrics: 'String2'
             }
         }]
     };
@@ -261,7 +265,13 @@ function getPlayList(next) {
             console.log(err);
         } else {
             console.log("playlist:", JSON.stringify(obj));
-            next();
+            if(obj.songs.length==2){
+                console.log("population SUCCESS");
+                next();
+            }
+            else{
+                console.log("population failed");
+            }
         }
     });
 }

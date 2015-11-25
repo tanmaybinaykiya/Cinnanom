@@ -25,13 +25,13 @@ var AdminHandler = function() {
 				password: request.body.password,
 				email: '' || request.body.email,
 				role: Role.OWNER
-			}, function(err, user) {
+			}, function(err) {
 				if (err) {
 					response.status(404).json({
 						error: err
 					});
 				} else {
-					response.status(201).json(user);
+					response.status(201).end();
 				}
 			});
 		} else {

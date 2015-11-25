@@ -1,6 +1,7 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
+// mongoose.Promise = global.Promise;
 
 var apiHandler = require('./apiHandler');
 var logger = require('./logger');
@@ -12,6 +13,7 @@ dbConnTimeout = setTimeout(function() {
 logger.info("Setting up DB...");
 mongoose.connect('mongodb://localhost/grep');
 var db = mongoose.connection;
+var app;
 
 function configureDb(db) {
 	db.on('error', function() {
@@ -22,14 +24,15 @@ function configureDb(db) {
 	db.once('open', function(callback) {
 		logger.info("DB Setup Successful");
 		clearTimeout(dbConnTimeout);
+		configureApp();
+		startApp();
 	});
 }
-configureDb(db);
 
-var app = express();
 
 function configureApp() {
 	logger.info("Setting up App...");
+	app = express();
 
 	var port = process.env.PORT || 8080; // set our port
 	app.set('port', port);
@@ -42,12 +45,14 @@ function configureApp() {
 	logger.info("App setup Successful");
 }
 
-configureApp();
-
-logger.info("Starting up App...");
-app.listen(app.get('port'));
-logger.info("App is now listening at", app.get('port'));
+function startApp() {
+	logger.info("Starting up App...");
+	app.listen(app.get('port'));
+	logger.info("App is now listening at", app.get('port'));
+}
 
 function cleanup() {
 	mongoose.disconnect();
 }
+
+configureDb(db);

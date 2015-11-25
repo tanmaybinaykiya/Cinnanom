@@ -55,6 +55,7 @@ var DJHandler = function() {
     self.getPlaylist = function(request, response) {
         // TODO 
         // Authorize
+        // check if that pub has the playlist
         if (request.params.pubId) {
             Playlist.findPlaylistById(request.params.playlistId, function(err, playlist) {
                 if (err) {

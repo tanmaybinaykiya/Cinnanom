@@ -54,7 +54,7 @@ var AppHandler = function() {
     self.getCurrentPlaylist = function(request, response) {
         // TODO 
         // implement filters
-        if (request.params.pubId) {
+        if ( request.params.pubId ) {
             var limit = 20;
             if (request.params.pageSize) {
                 limit = request.params.pageSize;
@@ -68,7 +68,7 @@ var AppHandler = function() {
                     response.status(200).json(playlist);
                 } else {
                     response.status(404).json({
-                        error: 'No ACTIVE Playlist found'
+                        error: 'No Active Playlist found'
                     });
                 }
             });
