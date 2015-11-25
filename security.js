@@ -1,7 +1,6 @@
 var jwt = require('jsonwebtoken');
 
 var User = require('./models/User');
-var logger = require('./logger');
 var config = require('./config');
 
 function decode(req, cb) {
@@ -24,22 +23,22 @@ function verifyUser(username, email, password, callback) {
         if (err) {
             User.findByEmail(email, function(e, user) {
                 if (e) {
-                    logger.error('User not found' + e);
+                    console.log('User not found' + e);
                     callback('User not found');
                 } else if (user.password !== password) {
-                    logger.info('Email password do not match');
+                    console.log('Email password do not match');
                     callback('Email password do not match');
                 } else {
                     callback(null, user);
                 }
             });
         } else if (user && user.password !== password) {
-            logger.info('Username password do not match');
+            console.log('Username password do not match');
             callback('Username password do not match');
         } else if (user) {
             callback(null, user);
         } else {
-            logger.info('Some error');
+            console.log('Some error');
             callback('Some error');
         }
     });
@@ -65,7 +64,7 @@ var security = module.exports = new function() {
                         token: access_token
                     });
                 } else {
-                    logger.error(err);
+                    console.log(err);
                     res.status(401).json({
                         error: err
                     });
@@ -83,7 +82,7 @@ var security = module.exports = new function() {
                         error: err
                     });
                 } else if (!err && decoded && decoded.role === role) {
-                    logger.info("Role: ", role);
+                    console.log("Role: ", role);
                     next();
                 } else {
                     res.status(403).json({

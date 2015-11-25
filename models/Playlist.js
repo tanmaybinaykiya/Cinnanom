@@ -2,7 +2,6 @@
 //flush votecounts
 var mongoose = require('mongoose'),
 	_ = require('underscore'),
-	logger = require('../logger'),
 	Song = require('./Song'),
 	SongState = require('../enums/SongState'),
 	SongKind = require('../enums/SongType'),
@@ -21,9 +20,9 @@ var PlaylistSchema = new mongoose.Schema({
 		state: String,
 		kind: String
 	}]
-}, {
+}/*, {
 	strict: true
-});
+}*/);
 
 
 var Playlist = mongoose.model("Playlist", PlaylistSchema);
@@ -31,7 +30,7 @@ var Playlist = mongoose.model("Playlist", PlaylistSchema);
 var PlaylistManager = function() {
 	var self = this;
 
-	//sort songs by upvote count. if upvoteCount is missing, set to to 0
+	//sort songs by upvote count. if upvoteCount is missing, set it to 0
 	function sortSongsByUpvoteCount(playlist) {
 		return _.sortBy(playlist.songs, function(song) {
 			if (!song.upvote_count) {
@@ -41,32 +40,28 @@ var PlaylistManager = function() {
 		});
 	}
 
-	function pushNewSongs(playlist, newPlaylist, cb) {
-
-	}
-
 	self.createPlaylist = function(playlist, cb) {
-		var newPlaylist = new Playlist({
-			name: playlist.name || '',
-			genre: playlist.genre || '',
-			songs: []
-		});
 
-		sortSongsByUpvoteCount(playlist);
+		try {
+			var newPlaylist = new Playlist({
+				name: playlist.name || '',
+				genre: playlist.genre || '',
+				songs: []
+			});
 
-		_.each(playlist.songs, function(song, index, list) {
-			if (song.details._id) {
-				newPlaylist.songs.push({
-					details: song.details._id,
-					upvote_count: song.upvote_count || 0,
-					state: song.state || SongState.QUEUED,
-					kind: song.kind || SongKind.NOT_FROZEN
-				});
-			} else {
-				logger.info("object:", song.details);
-				Song.create(song.details, function(err, obj) {
-					logger.info("newSong:", obj);
-					process.nextTick(function() {
+			sortSongsByUpvoteCount(playlist);
+
+			_.each(playlist.songs, function(song, index, list) {
+				if (song.details._id) {
+					newPlaylist.songs.push({
+						details: song.details._id,
+						upvote_count: song.upvote_count || 0,
+						state: song.state || SongState.QUEUED,
+						kind: song.kind || SongKind.NOT_FROZEN
+					});
+				} else {
+					Song.create(song.details, function(err, obj) {
+						console.log("saved song, pushing now:", obj);
 						newPlaylist.songs.push({
 							details: obj._id,
 							upvote_count: song.upvote_count || 0,
@@ -74,62 +69,33 @@ var PlaylistManager = function() {
 							kind: song.kind || SongKind.NOT_FROZEN
 						});
 					});
-				});
-				// process.nextTick(function() {
-				// 	logger.info("newSong:", id);
-				// 	newPlaylist.songs.push({
-				// 		details: {
-				// 			_id: id
-				// 		},
-				// 		upvote_count: song.upvote_count || 0,
-				// 		state: song.state || SongState.QUEUED,
-				// 		kind: song.kind || SongKind.NOT_FROZEN
-				// 	});
-				// });
-			}
-		});
-
-		newPlaylist.save();
+				}
+			});
+			newPlaylist.save().then(function(obj) {
+				console.log("playlist: ", obj);
+				cb(null, obj);
+			}, function(err) {
+				throw err;
+			});
+		} catch (err) {
+			cb(err);
+			return;
+		}
 	}
 
 	self.findPlaylistById = function(playlistId, cb) {
-		// Playlist.findById(playlistId)
-		// 	.populate('songs songs.details', function(err, playlists) {
-		// 		if (err) {
-		// 			logger.error(err.message,err.stack);
-		// 			cb(err);
-		// 		} else if (playlists) {
-		// 			cb(null, playlists);
-		// 		} else {
-		// 			cb('No playlist found');
-		// 		}
-		// 	});
-
-		// Playlist.findById(playlistId, function(err, playlist) {
-		// 	if (err) {
-		// 		logger.error(err.stack.split("\n"));
-		// 		cb(err);
-		// 	} else if (playlist) {
-		// 		logger.info("WILL POPULATE");
-		// 		playlist
-		// 			.populate('songs')
-		// 			.populate('details', function(err, playlist) {
-		// 				logger.info("Playlist", JSON.stringify(playlist))
-		// 			});
-		// 		// logger.info('execPopulate: ', JSON.stringify(playlist));
-		// 		// if (pl) {
-		// 		// 	cb(err);
-		// 		// } else if (obj) {
-		// 		// 	cb(err, obj);
-		// 		// } else {
-		// 		cb(null, playlist);
-		// 		// }
-		// 	} else {
-		// 		cb('No playlist found');
-		// 	}
-		// });
-
-
+		Playlist.findById(playlistId)
+			.then(function(playlist) {
+				console.log("find: ", playlist);
+				if (playlist) {
+					cb(null, playlist);
+				} else {
+					cb('No playlist found');
+				}
+			}, function(err) {
+				console.log(err.message, err.stack);
+				cb(err);
+			});
 	}
 
 	self.updatePlaylistById = function(playlistId, playlist, cb) {
@@ -140,7 +106,7 @@ var PlaylistManager = function() {
 			upsert: false
 		}, function(err, playlist) {
 			if (err) {
-				logger.error(err.stack.split("\n"));
+				console.log(err.stack.split("\n"));
 				cb(err);
 			} else {
 				cb(null, playlist);
@@ -151,7 +117,7 @@ var PlaylistManager = function() {
 	self.deletePlaylistById = function(playlistId, cb) {
 		Playlist.findByIdAndRemove(playlistId, function(err) {
 			if (err) {
-				logger.error(err.stack.split("\n"));
+				console.log(err.stack.split("\n"));
 			}
 			cb(err);
 		});
@@ -160,7 +126,7 @@ var PlaylistManager = function() {
 	self.updateSongKind = function(playlistId, songId, kind, cb) {
 		self.findPlaylistById(playlistId, function(err, playlist) {
 			if (err) {
-				logger.error(err.stack.split("\n"));
+				console.log(err.stack.split("\n"));
 				cb(err);
 			} else {
 				var songIndex = _.findIndex(playlist.songs, function(song) {
@@ -171,7 +137,7 @@ var PlaylistManager = function() {
 				});
 				playlist.songs[songIndex].kind = kind;
 				this.updatePlaylistById(playlistId, playlist, function(err) {
-					logger.error(err.stack.split("\n"));
+					console.log(err.stack.split("\n"));
 					cb(err);
 				});
 			}
@@ -181,7 +147,7 @@ var PlaylistManager = function() {
 	self.updateSongState = function(playlistId, songId, state, cb) {
 		self.findPlaylistById(playlistId, function(err, playlist) {
 			if (err) {
-				logger.error(err.stack.split("\n"));
+				console.log(err.stack.split("\n"));
 				cb(err);
 			} else {
 				var songIndex = _.findIndex(playlist.songs, function(song) {
@@ -192,7 +158,7 @@ var PlaylistManager = function() {
 				});
 				playlist.songs[songIndex].state = state;
 				this.updatePlaylistById(playlistId, playlist, function(err) {
-					logger.error(err.stack.split("\n"));
+					console.log(err.stack.split("\n"));
 					cb(err);
 				});
 			}
@@ -202,7 +168,7 @@ var PlaylistManager = function() {
 	self.upvoteSong = function(playlistId, songId, cb) {
 		self.findPlaylistById(playlistId, function(err, playlist) {
 			if (err) {
-				logger.error(err.stack.split("\n"));
+				console.log(err.stack.split("\n"));
 				cb(err);
 			} else {
 				var songIndex = _.findIndex(playlist.songs, function(song) {
@@ -213,7 +179,7 @@ var PlaylistManager = function() {
 				});
 				playlist.songs[songIndex].upvote_count = playlist.songs[songIndex].upvote_count + 1;
 				this.updatePlaylistById(playlistId, playlist, function(err) {
-					logger.error(err.stack.split("\n"));
+					console.log(err.stack.split("\n"));
 					cb(err);
 				});
 			}

@@ -7,13 +7,12 @@ var djHandler = require('./controllers/dj');
 var appHandler = require('./controllers/app');
 var config = require('./config');
 var security = require('./security');
-var logger = require('./logger');
 var Role = require('./enums/Role');
 
 var router = express.Router();
 
 router.use(function(req, res, next) {
-	logger.info("\n\t" + /*"[" + Date.now() + "] "+*/req.method+": /api" + req.url + "\n\t" + JSON.stringify(req.body));
+	console.log("Access::\n\t" + /*"[" + Date.now() + "] "+*/req.method+": /api" + req.url + "\n\t" + JSON.stringify(req.body));
 	next();
 });
 
@@ -72,7 +71,7 @@ router.route('/pub/:pubId/playlist/:playlistId/song/:songId/upvote')
 
 router.route('/test')
 	.get(function(req, res, next) {
-		logger.info("test");
+		console.log("test");
 		next();
 	}, function(req, res) {
 		res.status(204).json({});

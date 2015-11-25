@@ -1,5 +1,4 @@
-var mongoose = require('mongoose'),
-	logger = require('../logger');
+var mongoose = require('mongoose');
 
 var SongSchema = new mongoose.Schema({
 	song_name: String,
@@ -20,21 +19,13 @@ var SongManager = function() {
 	var self = this;
 
 	self.create = function(song, cb) {
-		// Song.create(song, function(err, doc) {
-		// 	if (err) {
-		// 		logger.error(err.stack.split("\n"));
-		//   			cb(err);
-		// 	} else {
-		// 		cb(null, doc);
-		// 	}
-		// });
-		var promise = Song.create(song).exec();
-
-		promise.then(function(song) {
-			cb(null, song);
-		}, function(err) {
-			cb(err);
-		});
+		Song.create(song)
+			.then(function(song) {
+				console.log(song);
+				cb(null, song);
+			}, function(err) {
+				cb(err);
+			});
 
 	};
 };

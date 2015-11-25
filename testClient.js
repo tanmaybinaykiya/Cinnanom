@@ -4,7 +4,7 @@ var async = require('async');
 var hostname = "localhost";
 var port = 8080;
 
-http.globalAgent.maxSockets = 50
+http.globalAgent.maxSockets = 500
 
 function getCall(path, cb) {
     var options = {
@@ -50,11 +50,12 @@ function postCall(path, obj, cb) {
     }
     var req = http.request(options, function(res) {
         console.log("statusCode: ", res.statusCode);
+        if (res.statusCode > 300) {
+            cb(res.statusCode);
+            req.end();
+            return;
+        }
         res.on('data', function(d) {
-            if (res.statusCode > 300) {
-                cb(res.statusCode);
-                return;
-            }
             req.end();
             cb(null, JSON.parse(d));
             return;
@@ -82,11 +83,12 @@ function putCall(path, obj, cb) {
     }
     var req = http.request(options, function(res) {
         console.log("statusCode: ", res.statusCode);
+        if (res.statusCode > 300) {
+            cb(res.statusCode);
+            req.end();
+            return;
+        }
         res.on('data', function(d) {
-            if (res.statusCode > 300) {
-                cb(res.statusCode);
-                return;
-            }
             req.end();
             cb(null, JSON.parse(d));
             return;
@@ -253,6 +255,7 @@ function createPlaylist(next) {
             console.log(err);
         } else {
             playlist = obj;
+            console.log("Saving playlist: ", playlist);
             next();
         }
     });
@@ -265,11 +268,10 @@ function getPlayList(next) {
             console.log(err);
         } else {
             console.log("playlist:", JSON.stringify(obj));
-            if(obj.songs.length==2){
+            if (obj.songs.length == 2) {
                 console.log("population SUCCESS");
                 next();
-            }
-            else{
+            } else {
                 console.log("population failed");
             }
         }
@@ -394,26 +396,26 @@ function testCall(next) {
 
 // testCall();
 async.waterfall([
-        // testCall,
-        getAdminToken,
-        registerOwner,
-        getOwnerToken,
-        registerPub,
-        getPubDetails,
-        registerDJ,
-        getDJToken,
-        createPlaylist,
-        getPlayList,
-        setPlaylistActive,
-        registerUser,
-        getUserToken,
-        getCurrentPlaylist,
-        upvoteSong,
-        updateSongType,
-        updateSongState
-    ], function(e, result) {
-        if (e) {
-            console.error(e);
-        }
-        console.log("DONE");
+    // testCall,
+    getAdminToken,
+    registerOwner,
+    getOwnerToken,
+    registerPub,
+    getPubDetails,
+    registerDJ,
+    getDJToken,
+    createPlaylist,
+    getPlayList,
+    setPlaylistActive,
+    registerUser,
+    getUserToken,
+    getCurrentPlaylist,
+    upvoteSong,
+    updateSongType,
+    updateSongState
+], function(e, result) {
+    if (e) {
+        console.error(e);
+    }
+    console.log("DONE");
 });

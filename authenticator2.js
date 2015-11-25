@@ -1,12 +1,11 @@
 var passport = require('passport');
 var JwtStrategy = require('passport-jwt').Strategy;
 var config = require('./config');
-var logger = require('./logger');
 
 var opts = {}
 opts.secretOrKey = config.secret;
 passport.use(new JwtStrategy(opts, function(jwt_payload, done) {
-    logger.info('jwt_payload: ', jwt_payload);
+    console.log('jwt_payload: ', jwt_payload);
     try {
         if (jwt_payload.role === 'admin') {
             username = jwt_payload.username;
@@ -36,7 +35,7 @@ passport.use(new JwtStrategy(opts, function(jwt_payload, done) {
             done('failed');
         }
     } catch (err) {
-        logger.info('error', err);
+        console.log('error', err);
         done(err);
     }
 }));

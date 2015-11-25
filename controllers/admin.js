@@ -18,20 +18,24 @@ var AdminHandler = function() {
 	 * @apiSuccess {String} id         The new Users-ID.
 	 *
 	 * @apiUse CreateUserError
-	 */self.createOwner = function(request, response) {
+	 */
+	self.createOwner = function(request, response) {
 		if (request.body.username && request.body.password) {
 			User.createUser({
 				username: request.body.username,
 				password: request.body.password,
 				email: '' || request.body.email,
 				role: Role.OWNER
-			}, function(err) {
-				if (err) {
+			}, function(err, obj){
+				if(err){
 					response.status(404).json({
-						error: err
+						error: 'User or password not passed'
 					});
-				} else {
-					response.status(201).end();
+				}else if(obj){
+					console.log(err, obj);
+					response.status(201).json(obj);
+				}else{
+					response.status(500).end();
 				}
 			});
 		} else {

@@ -1,6 +1,5 @@
 var Playlist = require('../models/Playlist'),
     Pub = require('../models/Pub'),
-    logger = require('../logger'),
     PlaylistState = require('../enums/PlaylistState');
 
 function isValidPlaylistState(state) {
@@ -17,35 +16,35 @@ var DJHandler = function() {
         if (request.params.pubId && request.body.name) {
             // TODO
             // add request.playlist.status
-            logger.info("request.body: " + JSON.stringify(request.body));
+            console.log("request.body: " + JSON.stringify(request.body));
             Playlist.createPlaylist(request.body, function(err, playlist) {
                 if (err) {
-                    logger.error(err);
+                    console.log(err);
                     response.status(404).json({
                         error: err
                     });
                 } else if (playlist) {
                     //TODO
                     //associate dj with his playlist
-                    Pub.addPlaylist(request.params.pubId, playlist, function(err, pub) {
-                        if (!err) {
+                    // Pub.addPlaylist(request.params.pubId, playlist, function(err, pub) {
+                    //     if (!err) {
                             response.status(201).json(playlist);
-                        } else {
-                            logger.error('Failed to associate pub with playlist');
-                            response.status(404).json({
-                                error: 'Failed to associate pub with playlist'
-                            });
-                        }
-                    });
+                    //     } else {
+                    //         console.log('Failed to associate pub with playlist');
+                    //         response.status(404).json({
+                    //             error: 'Failed to associate pub with playlist'
+                    //         });
+                    //     }
+                    // });
                 } else {
-                    logger.error('Playlist Not Created');
+                    console.log('Playlist Not Created');
                     response.status(404).json({
                         error: 'Playlist Not Created'
                     });
                 }
             });
         } else {
-            logger.error('Playlist not provided');
+            console.log('Playlist not provided');
             response.status(404).json({
                 error: 'Playlist not provided'
             });
@@ -124,7 +123,7 @@ var DJHandler = function() {
                 song = req.body.song;
             Playlist.addSong(playlistId, song, function(err) {
                 if (err) {
-                    logger.error(err);
+                    console.log(err);
                     res.status(404).json({
                         error: err
                     });
@@ -145,7 +144,7 @@ var DJHandler = function() {
                 songId = req.body.songId;
             Playlist.removeSong(playlistId, songId, function(err) {
                 if (err) {
-                    logger.error(err);
+                    console.log(err);
                     res.status(404).json({
                         error: err
                     });
@@ -167,7 +166,7 @@ var DJHandler = function() {
                 state = req.query.state;
             Playlist.updateSongState(playlistId, songId, state, function(err) {
                 if (err) {
-                    logger.error(err);
+                    console.log(err);
                     res.status(404).json({
                         error: err
                     });
@@ -181,7 +180,7 @@ var DJHandler = function() {
                 type = req.query.type;
             Playlist.updateSongType(playlistId, songId, type, function(err) {
                 if (err) {
-                    logger.error(err);
+                    console.log(err);
                     res.status(404).json({
                         error: err
                     });

@@ -1,5 +1,4 @@
 var mongoose = require('mongoose'),
-	logger = require('../logger'),
 	PlaylistState = require('../enums/PlaylistState');
 
 var PubSchema = new mongoose.Schema({
@@ -27,11 +26,11 @@ var Pub = mongoose.model("Pub", PubSchema);
 var PubManager = function() {
 	var self = this;
 	this.registerPub = function(pub, cb) {
-		logger.info("PubManager.registerPub")
+		console.log("PubManager.registerPub")
 		Pub.create(pub, function(err, doc) {
-			logger.info("Pub.create cb")
+			console.log("Pub.create cb")
 			if (err) {
-				logger.error(err);
+				console.log(err);
 			}
 			cb(err, doc);
 		});
@@ -40,7 +39,7 @@ var PubManager = function() {
 	this.deletePubById = function(pubId, cb) {
 		Pub.findByIdAndRemove(pubId, function(e) {
 			if (e) {
-				logger.error(e.stack.split("\n"));
+				console.log(e.stack.split("\n"));
 			}
 			cb(e);
 		});
@@ -49,7 +48,7 @@ var PubManager = function() {
 	this.findPubById = function(pubId, cb) {
 		Pub.findById(pubId, function(err, pub) {
 			if (err) {
-				logger.error(err.stack.split("\n"));
+				console.log(err.stack.split("\n"));
 				cb(err);
 			} else if (pub) {
 				cb(null, pub);
@@ -66,7 +65,7 @@ var PubManager = function() {
 			upsert: false
 		}, function(err, pub) {
 			if (err) {
-				logger.error(err.stack.split("\n"));
+				console.log(err.stack.split("\n"));
 			}
 			cb(err, pub);
 		});
@@ -83,7 +82,7 @@ var PubManager = function() {
 			.limit(10)
 			.exec(function(err, locations) {
 				if (err) {
-					logger.error(err.stack.split("\n"));
+					console.log(err.stack.split("\n"));
 				}
 				cb(err, locations);
 			});
@@ -99,7 +98,7 @@ var PubManager = function() {
 				pub.playlists.push(playlist);
 				pub.save(function(e, pubFound) {
 					if (e) {
-						logger.error(e.stack.split("\n"));
+						console.log(e.stack.split("\n"));
 					}
 					cb(e, pubFound);
 				});
@@ -123,16 +122,16 @@ var PubManager = function() {
 			})
 			.exec(function(err, pubs) {
 				if (err) {
-					logger.error(err);
+					console.log(err);
 					cb(err);
 				} else if (pubs && pubs[0] && pubs[0].playlists && pubs[0].playlists[0] && pubs[0].playlists[0].details) {
 					cb(null, pubs);
 				} else {
-					logger.info('pubs: ' + pubs);
-					logger.info('pubs0: ' + pubs[0]);
-					logger.info('playlists: ' + pubs[0].playlists);
-					logger.info('playlists0: ' + pubs[0].playlists[0]);
-					logger.info('playlists0Details: ' + pubs[0].playlists[0].details);
+					console.log('pubs: ' + pubs);
+					console.log('pubs0: ' + pubs[0]);
+					console.log('playlists: ' + pubs[0].playlists);
+					console.log('playlists0: ' + pubs[0].playlists[0]);
+					console.log('playlists0Details: ' + pubs[0].playlists[0].details);
 					cb('INTERNAL_ERROR');
 				}
 			});
@@ -152,15 +151,15 @@ var PubManager = function() {
 				}
 				pubs[0].playlists[0].state = state;
 			} else {
-				// logger.info("pub:", pub);
-				// logger.info("playlists:", pub.playlists);
-				// logger.info("playlists[0]:", pub.playlists[0]);
+				// console.log("pub:", pub);
+				// console.log("playlists:", pub.playlists);
+				// console.log("playlists[0]:", pub.playlists[0]);
 				cb('Not FOUND')
 				return;
 			}
 			pubs[0].save(function(e, pubFound) {
 				if (e) {
-					logger.error(e.stack.split("\n"));
+					console.log(e.stack.split("\n"));
 				}
 				cb(e, pubFound);
 			});
@@ -179,10 +178,10 @@ var PubManager = function() {
 			})
 			.exec(function(err, pubs) {
 				if (err) {
-					logger.error(err);
+					console.log(err);
 					cb(err);
 				} else if (pubs && pubs[0] && pubs[0].playlists && pubs[0].playlists[0] && pubs[0].playlists[0].details) {
-					logger.info('pubs: ' + JSON.stringify(pubs));
+					console.log('pubs: ' + JSON.stringify(pubs));
 					pubs[0]
 						.populate('playlists.details')
 						.populate('playlists.details.songs')

@@ -4,12 +4,12 @@ var db = mongoose.connection;
 
 
 db.on('error', function() {
-	logger.info('connection error');
+	console.log('connection error');
 	cleanup();
 });
 
 db.once('open', function(callback) {
-	logger.info("DB Setup Successful");
+	console.log("DB Setup Successful");
 	saveBar();
 });
 

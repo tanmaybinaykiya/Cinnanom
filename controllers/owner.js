@@ -1,14 +1,13 @@
-var Pub = require('../models/Pub');
-var User = require('../models/User');
-var Roles = require('../enums/Role');
-var logger = require('../logger')
+var Pub = require('../models/Pub'),
+    User = require('../models/User'),
+    Roles = require('../enums/Role');
 var Owner = function() {
     var self = this;
     var acceptedRoles = ['ADMIN', 'PUB'];
 
     self.registerPub = function(request, response) {
         if (request.body.name && request.body.loc) {
-            logger.info("self.registerPub")
+            console.log("self.registerPub")
             Pub.registerPub({
                 name: request.body.name,
                 address: '' || request.body.address,
@@ -16,7 +15,7 @@ var Owner = function() {
                 genre: '' || request.body.genre,
                 playlists: request.body.playlists
             }, function(err, pub) {
-                logger.info("self.registerPub cb")
+                console.log("self.registerPub cb")
                 if (err) {
                     response.status(404).json({
                         error: 'INTERNAL_SERVER_ERROR'
