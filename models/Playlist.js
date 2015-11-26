@@ -9,20 +9,22 @@ var mongoose = require('mongoose'),
 
 
 var PlaylistSchema = new mongoose.Schema({
-	name: String,
-	genre: String,
-	songs: [{
-		details: {
-			type: mongoose.Schema.Types.ObjectId,
-			ref: 'Song'
-		},
-		upvote_count: Number,
-		state: String,
-		kind: String
-	}]
-}/*, {
-	strict: true
-}*/);
+		name: String,
+		genre: String,
+		songs: [{
+			details: {
+				type: mongoose.Schema.Types.ObjectId,
+				ref: 'Song'
+			},
+			upvote_count: Number,
+			state: String,
+			kind: String
+		}]
+	}
+	/*, {
+		strict: true
+	}*/
+);
 
 
 var Playlist = mongoose.model("Playlist", PlaylistSchema);
@@ -64,18 +66,19 @@ var PlaylistManager = function() {
 						console.log("saved song, pushing now:", obj);
 						newPlaylist.songs.push({
 							details: obj._id,
-							upvote_count: song.upvote_count || 0,
+							upvote_count: song.upvote_count,
 							state: song.state || SongState.QUEUED,
 							kind: song.kind || SongKind.NOT_FROZEN
 						});
 					});
 				}
 			});
-			newPlaylist.save().then(function(obj) {
+			Playlist.create(newPlaylist, function(err, obj) {
+				if (err) {
+					console.error("err: ", err);
+				}
 				console.log("playlist: ", obj);
-				cb(null, obj);
-			}, function(err) {
-				throw err;
+				cb(err, obj);
 			});
 		} catch (err) {
 			cb(err);
