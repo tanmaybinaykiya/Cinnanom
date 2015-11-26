@@ -4,7 +4,7 @@ var async = require('async');
 var hostname = "localhost";
 var port = 8080;
 
-http.globalAgent.maxSockets = 500
+http.globalAgent.maxSockets = Infinity;
 
 function getCall(path, cb) {
     var options = {
@@ -36,7 +36,7 @@ function getCall(path, cb) {
         console.error("err:", e);
         cb(e);
     });
-};
+}
 
 function postCall(path, obj, cb) {
     var options = {
@@ -69,7 +69,7 @@ function postCall(path, obj, cb) {
         console.error(e);
         cb(e);
     });
-};
+}
 
 function putCall(path, obj, cb) {
     var options = {
@@ -100,9 +100,7 @@ function putCall(path, obj, cb) {
         console.error('putCall err:', e);
         cb(e);
     });
-};
-
-
+}
 
 function getAdminToken(next) {
     console.log("get Admin token");
@@ -120,7 +118,7 @@ function getAdminToken(next) {
             next();
         }
     });
-};
+}
 
 function registerOwner(next) {
     console.log("registerOwner");
@@ -138,7 +136,7 @@ function registerOwner(next) {
             next();
         }
     });
-};
+}
 
 function getOwnerToken(next) {
     console.log("get owner token");
@@ -151,7 +149,7 @@ function getOwnerToken(next) {
             next();
         }
     });
-};
+}
 
 function registerPub(next) {
     console.log("registerPub");
@@ -170,7 +168,7 @@ function registerPub(next) {
             next();
         }
     });
-};
+}
 
 function getPubDetails(next) {
     console.log("getPubDetails");
@@ -188,7 +186,7 @@ function getPubDetails(next) {
             next();
         }
     });
-};
+}
 
 function registerDJ(next) {
     console.log("registerDJ");
@@ -206,7 +204,7 @@ function registerDJ(next) {
             next();
         }
     });
-};
+}
 
 function getDJToken(next) {
     console.log("get dj token");
@@ -219,8 +217,7 @@ function getDJToken(next) {
             next();
         }
     });
-};
-
+}
 
 function createPlaylist(next) {
     console.log("createPlaylist");
@@ -254,26 +251,40 @@ function createPlaylist(next) {
         if (err) {
             console.log(err);
         } else {
-            playlist = obj;
-            console.log("Saving playlist: ", playlist);
+            pub = obj;
+            console.log("Saving pub: ", pub);
             next();
         }
     });
-};
+}
 
 function getPlayList(next) {
     console.log("get playlist");
-    getCall('/pub/' + pub._id + '/playlist/' + playlist._id + '/?access_token=' + djToken, function(err, obj) {
+    getCall('/pub/' + pub._id + '/playlist/' + pub.playlists[0].details + '/?access_token=' + djToken, function(err, obj) {
         if (err) {
             console.log(err);
         } else {
             console.log("playlist:", JSON.stringify(obj));
-            if (obj.songs.length == 2) {
+            if (obj.songs.length == 2 && obj.songs[0].details._id) {
                 console.log("population SUCCESS");
+                playlist = obj;
                 next();
             } else {
                 console.log("population failed");
+                next("population failed");
             }
+        }
+    });
+}
+
+function setPlaylistActive(next) {
+    console.log('setPlaylistActive');
+    postCall('/pub/' + pub._id + '/playlist/' + playlist._id + '?state=ACTIVE&access_token=' + djToken, '', function(err, obj) {
+        if (err) {
+            console.log("err:" + err);
+        } else {
+            console.log("playlist ACTIVE");
+            next();
         }
     });
 }
@@ -308,9 +319,38 @@ function getUserToken(next) {
     });
 }
 
+function getCurrentPlaylist(next) {
+    console.log("getCurrentPlaylist");
+    getCall('/pub/' + pub._id + '/playlist?access_token=' + userToken, function(err, obj) {
+        if (err) {
+            console.log(err);
+        } else if (obj) {
+            console.log("playlist:", JSON.stringify(obj));
+            userPlaylist = obj;
+            song = obj.songs[0].details;
+            next();
+        } else {
+            console.log("no playlist:");
+        }
+    });
+}
+
+function upvoteSong(next) {
+    console.log("upvoteSong");
+    postCall('/pub/' + pub._id + '/playlist/' + playlist._id + '/song/' + song._id + '/upvote&access_token=' + userToken, null, function(err, obj) {
+        if (err) {
+            console.log("err:" + err);
+            next(err);
+        } else {
+            console.log("song Updated: " + obj);
+            next();
+        }
+    });
+}
+
 function updateSong(updateState, updateType, next) {
 
-    path = '/pub/' + pub._id + '/playlist/' + playlist._id + '/song/' + song._id;
+    var path = '/pub/' + pub._id + '/playlist/' + playlist._id + '/song/' + song._id;
     if (updateState) {
         path = path + '?state=' + updateState;
     } else if (updateType) {
@@ -329,57 +369,17 @@ function updateSong(updateState, updateType, next) {
     });
 }
 
-function updateSongState(next) {
-    console.log('updateSongState');
-    updateSong('PLAYING', null, next);
-}
-
 function updateSongType(next) {
     console.log('updateSongType');
     updateSong(null, 'FROZEN', next);
 }
 
-function upvoteSong(next) {
-    postCall('/pub/' + pub._id + '/playlist/' + playlist._id + '/song/' + song._id + '/upvote&access_token=' + userToken, null, function(err, obj) {
-        if (err) {
-            console.log("err:" + err);
-        } else {
-            console.log("song Updated: " + obj);
-            next();
-        }
-    });
+function updateSongState(next) {
+    console.log('updateSongState');
+    updateSong('PLAYING', null, next);
 }
 
 function getPubListByGeoTag(next) {}
-
-
-function setPlaylistActive(next) {
-    console.log('setPlaylistActive');
-    postCall('/pub/' + pub._id + '/playlist/' + playlist._id + '?state=ACTIVE&access_token=' + djToken, '', function(err, obj) {
-        if (err) {
-            console.log("err:" + err);
-        } else {
-            console.log("playlist ACTIVE");
-            next();
-        }
-    });
-}
-
-function getCurrentPlaylist(next) {
-    console.log("getCurrentPlaylist");
-    getCall('/pub/' + pub._id + '/playlist?access_token=' + userToken, function(err, obj) {
-        if (err) {
-            console.log(err);
-        } else if (obj) {
-            console.log("playlist:", JSON.stringify(obj));
-            userPlaylist = obj;
-            song = obj.songs[0].details;
-            next();
-        } else {
-            console.log("no playlist:");
-        }
-    });
-}
 
 function testCall(next) {
     console.log("test");

@@ -1,6 +1,7 @@
 var Playlist = require('../models/Playlist'),
     Pub = require('../models/Pub'),
-    PlaylistState = require('../enums/PlaylistState');
+    PlaylistState = require('../enums/PlaylistState'),
+    async = require('async');
 
 function isValidPlaylistState(state) {
     return (state === PlaylistState.ACTIVE || state === PlaylistState.DELETED || state === PlaylistState.INACTIVE);
@@ -11,35 +12,29 @@ var DJHandler = function() {
     var acceptedRoles = ['ADMIN', 'DJ'];
 
     self.createPlaylist = function(request, response) {
-        //TODO 
-        // verify all params of playlist
         if (request.params.pubId && request.body.name) {
-            // TODO
-            // add request.playlist.status
             console.log("request.body: " + JSON.stringify(request.body));
-            Playlist.createPlaylist(request.body, function(err, playlist) {
-                if (err) {
-                    console.log(err);
+            async.waterfall([function(cb) {
+                    console.log("DJ: waterfall at create playlist");
+                    Playlist.createPlaylist(request.body, cb);
+                },
+                function(playlist2, cb) {
+                    console.log("waterfall at add playlist");
+                    Pub.addPlaylist(request.params.pubId, playlist2, cb);
+                }
+            ], function(err, pub) {
+                //respond   
+                if ((!err) && pub) {
+                    console.log("pub updated ::", pub);
+                    response.status(201).json(pub);
+                } else if (err) {
                     response.status(404).json({
                         error: err
                     });
-                } else if (playlist) {
-                    //TODO
-                    //associate dj with his playlist
-                    // Pub.addPlaylist(request.params.pubId, playlist, function(err, pub) {
-                    //     if (!err) {
-                            response.status(201).json(playlist);
-                    //     } else {
-                    //         console.log('Failed to associate pub with playlist');
-                    //         response.status(404).json({
-                    //             error: 'Failed to associate pub with playlist'
-                    //         });
-                    //     }
-                    // });
                 } else {
-                    console.log('Playlist Not Created');
-                    response.status(404).json({
-                        error: 'Playlist Not Created'
+                    console.log("pub not created");
+                    response.status(500).json({
+                        error: "INTERNAL_SERVER_ERROR"
                     });
                 }
             });

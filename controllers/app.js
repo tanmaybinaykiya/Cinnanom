@@ -67,6 +67,7 @@ var AppHandler = function() {
                 } else if (playlist) {
                     response.status(200).json(playlist);
                 } else {
+                    console.log("laalallalalala: ",err, playlist);
                     response.status(404).json({
                         error: 'No Active Playlist found'
                     });

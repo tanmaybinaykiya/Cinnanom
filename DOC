@@ -35,3 +35,4 @@ P2[APIs to be added] remove song from playlist,
 
 update meta for song,
 setActive
+async.paralle to save songs
