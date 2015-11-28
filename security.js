@@ -23,13 +23,21 @@ function verifyUser(username, email, password, callback) {
         if (err) {
             User.findByEmail(email, function(e, user) {
                 if (e) {
-                    console.log('User not found' + e);
-                    callback('User not found');
-                } else if (user.password !== password) {
+                    console.log(e);
+                    callback('INTERNAL_SERVER_ERROR');
+                } else if (user && user.password !== password) {
                     console.log('Email password do not match');
                     callback('Email password do not match');
-                } else {
+                } else if (user) {
                     callback(null, user);
+                } else {
+                    console.log('User not found: ' +
+                        '{ ' +
+                        'username:' + username + ', ' +
+                        'email:' + email + ', ' +
+                        'password:' + password +
+                        '}');
+                    callback('User not found');
                 }
             });
         } else if (user && user.password !== password) {
@@ -38,8 +46,13 @@ function verifyUser(username, email, password, callback) {
         } else if (user) {
             callback(null, user);
         } else {
-            console.log('Some error');
-            callback('Some error');
+            console.log('User not found: ' +
+                '{ ' +
+                'username:' + username + ', ' +
+                'email:' + email + ', ' +
+                'password:' + password +
+                '}');
+            callback('User not found');
         }
     });
 }
