@@ -1,7 +1,8 @@
 var Pub = require('../models/Pub'),
     User = require('../models/User'),
     Playlist = require('../models/Playlist'),
-    Role = require('../enums/Role');
+    Role = require('../enums/Role'),
+    logger = require('../logger');
 
 var AppHandler = function() {
     var self = this;
@@ -81,9 +82,7 @@ var AppHandler = function() {
     };
 
     self.upvoteSong = function(request, response) {
-        console.log("upvoteSong");
         // TODO
-        // authorize
         // check pub-playlist association
         if (request.params.pubId && request.params.playlistId && request.params.songId) {
             var playlistId=request.params.playlistId,
@@ -91,7 +90,7 @@ var AppHandler = function() {
 
             Playlist.upvoteSong(playlistId, songId, function(err, playlist) {
                 if (err) {
-                    console.log("err: ", err);
+                    logger.error("Error Upvoting song: ", err.stack.split("\n"));
                     response.status(500).json({
                         error: err
                     });
@@ -100,7 +99,6 @@ var AppHandler = function() {
                 }
             });
         } else {
-            console.log(request.params.pubId, request.params.playlistId, request.params.songId);
             response.status(404).json({
                 error: 'PlaylistId or SongId not provided'
             });

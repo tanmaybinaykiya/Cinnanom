@@ -23,7 +23,6 @@ function getCall(path, cb) {
                 cb(res.statusCode);
                 return;
             }
-            console.log("data:");
             if (data) {
                 cb(null, JSON.parse(data));
             } else {
@@ -33,7 +32,7 @@ function getCall(path, cb) {
     });
     req.end();
     req.on('error', function(e) {
-        console.error("err:", e);
+        console.log("err:", e);
         cb(e);
     });
 }
@@ -66,7 +65,7 @@ function postCall(path, obj, cb) {
     }
     req.end();
     req.on('error', function(e) {
-        console.error(e);
+        console.log(e);
         cb(e);
     });
 }
@@ -97,7 +96,7 @@ function putCall(path, obj, cb) {
     req.write(JSON.stringify(obj));
     req.end();
     req.on('error', function(e) {
-        console.error('putCall err:', e);
+        console.log('putCall err:', e);
         cb(e);
     });
 }
@@ -132,7 +131,7 @@ function registerOwner(next) {
             console.log("err:", err);
         } else {
             owner = obj;
-            console.log("Owner: " + JSON.stringify(owner));
+            console.log("Owner: " + JSON.stringify(owner, null, 4));
             next();
         }
     });
@@ -164,7 +163,7 @@ function registerPub(next) {
             console.log(err)
         } else {
             pub = obj;
-            console.log("Pub: " + JSON.stringify(obj));
+            console.log("Pub: " + JSON.stringify(obj, null, 4));
             next();
         }
     });
@@ -182,7 +181,7 @@ function getPubDetails(next) {
         if (err) {
             console.log(err)
         } else {
-            console.log("Pub Details: " + JSON.stringify(obj));
+            console.log("Pub Details: " + JSON.stringify(obj, null, 4));
             next();
         }
     });
@@ -200,7 +199,7 @@ function registerDJ(next) {
             console.log(err)
         } else {
             dj = obj;
-            console.log("DJ: " + JSON.stringify(obj));
+            console.log("DJ: " + JSON.stringify(obj, null, 4));
             next();
         }
     });
@@ -267,7 +266,7 @@ function getPlayList(next) {
         if (err) {
             console.log(err);
         } else {
-            console.log("playlist:", JSON.stringify(obj));
+            console.log("playlist:", JSON.stringify(obj, null, 4));
             if (obj.songs.length == 2 && obj.songs[0].details._id) {
                 console.log("population SUCCESS");
                 playlist = obj;
@@ -328,7 +327,7 @@ function getCurrentPlaylist(next) {
         if (err) {
             console.log(err);
         } else if (obj) {
-            console.log("playlist:", JSON.stringify(obj));
+            console.log("playlist:", JSON.stringify(obj, null, 4));
             if (obj.songs.length === 2 && obj.songs[0].details._id) {
                 console.log("population SUCCESS");
                 userPlaylist = obj;
@@ -433,7 +432,7 @@ async.waterfall([
     updateSongState
 ], function(e, result) {
     if (e) {
-        console.error(e);
+        console.log(e);
     }
     console.log("DONE");
 });

@@ -1,4 +1,5 @@
-var mongoose = require('mongoose');
+var mongoose = require('mongoose'),
+    logger= require('../logger');
 var Schema = mongoose.Schema;
 
 var UserSchema = new Schema({
@@ -31,7 +32,7 @@ var UserManager = function() {
             role: role
         }, function(e, user) {
             if (e) {
-                console.log(e.stack.split("\n"));
+                logger.error("error deleteUserByRoleAndId", e.stack.split("\n"));
                 cb(e);
             } else {
                 cb(null);
@@ -42,14 +43,14 @@ var UserManager = function() {
     self.findByUsername = function(user_name, cb) {
         User.findOne({
             username: user_name
-        }, function(e, user) {
-            if (e) {
-                console.log(e.stack.split("\n"));
-                cb(e);
+        }, function(err, user) {
+            if (err) {
+                logger.error("error findByUsername", err.stack.split("\n"));
+                cb(err);
             } else if (user) {
                 cb(null, user);
             } else {
-                console.log('User does not exist');
+                logger.error('User does not exist');
                 cb('User does not exist');
             }
         });
@@ -59,9 +60,9 @@ var UserManager = function() {
         User.findOne({
             email: email
         }, function(e, user) {
-            if (e) {
-                console.log(e.stack.split("\n"));
-                cb('User does not exist');
+            if (err) {
+                logger.error("error findByEmail", err.stack.split("\n"));
+                cb(err);
             } else if (user) {
                 cb(null, user);
             } else {

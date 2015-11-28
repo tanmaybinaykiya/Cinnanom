@@ -1,7 +1,8 @@
 var Playlist = require('../models/Playlist'),
     Pub = require('../models/Pub'),
     PlaylistState = require('../enums/PlaylistState'),
-    async = require('async');
+    async = require('async'),
+    logger = require('../logger');
 
 function isValidPlaylistState(state) {
     return (state === PlaylistState.ACTIVE || state === PlaylistState.DELETED || state === PlaylistState.INACTIVE);
@@ -13,33 +14,28 @@ var DJHandler = function() {
 
     self.createPlaylist = function(request, response) {
         if (request.params.pubId && request.body.name) {
-            console.log("request.body: " + JSON.stringify(request.body));
             async.waterfall([function(cb) {
-                    console.log("DJ: waterfall at create playlist");
                     Playlist.createPlaylist(request.body, cb);
                 },
                 function(playlist2, cb) {
-                    console.log("waterfall at add playlist");
                     Pub.addPlaylist(request.params.pubId, playlist2, cb);
                 }
             ], function(err, pub) {
-                //respond   
                 if ((!err) && pub) {
-                    console.log("pub updated ::", pub);
                     response.status(201).json(pub);
                 } else if (err) {
                     response.status(404).json({
                         error: err
                     });
                 } else {
-                    console.log("pub not created");
+                    logger.error("Pub not created");
                     response.status(500).json({
                         error: "INTERNAL_SERVER_ERROR"
                     });
                 }
             });
         } else {
-            console.log('Playlist not provided');
+            logger.error('Playlist not provided');
             response.status(404).json({
                 error: 'Playlist not provided'
             });
@@ -118,7 +114,7 @@ var DJHandler = function() {
                 song = req.body.song;
             Playlist.addSong(playlistId, song, function(err) {
                 if (err) {
-                    console.log(err);
+                    logger.error("Error adding song", err.stack.split("\n"));
                     res.status(404).json({
                         error: err
                     });
@@ -139,7 +135,7 @@ var DJHandler = function() {
                 songId = req.body.songId;
             Playlist.removeSong(playlistId, songId, function(err) {
                 if (err) {
-                    console.log(err);
+                    logger.error("Error removing song:", err);
                     res.status(404).json({
                         error: err
                     });
@@ -161,7 +157,7 @@ var DJHandler = function() {
                 state = req.query.state;
             Playlist.updateSongState(playlistId, songId, state, function(err) {
                 if (err) {
-                    console.log(err);
+                    logger.error("Error updating song:", err.stack.split("\n"));
                     res.status(404).json({
                         error: err
                     });
@@ -175,7 +171,7 @@ var DJHandler = function() {
                 kind = req.query.kind;
             Playlist.updateSongKind(playlistId, songId, kind, function(err) {
                 if (err) {
-                    console.log(err);
+                    logger.error("Error updating song: ",err.stack.split("\n"));
                     res.status(404).json({
                         error: err
                     });

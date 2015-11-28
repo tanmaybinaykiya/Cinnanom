@@ -1,18 +1,18 @@
-var express = require('express');
-var jwt = require('jsonwebtoken');
-
-var adminHandler = require('./controllers/admin');
-var owner = require('./controllers/owner');
-var djHandler = require('./controllers/dj');
-var appHandler = require('./controllers/app');
-var config = require('./config');
-var security = require('./security');
-var Role = require('./enums/Role');
+var express = require('express'),
+	jwt = require('jsonwebtoken'),
+	logger = require('./logger'),
+	adminHandler = require('./controllers/admin'),
+	owner = require('./controllers/owner'),
+	djHandler = require('./controllers/dj'),
+	appHandler = require('./controllers/app'),
+	config = require('./config'),
+	security = require('./security'),
+	Role = require('./enums/Role');
 
 var router = express.Router();
 
 router.use(function(req, res, next) {
-	console.log("Access::\n\t" + /*"[" + Date.now() + "] "+*/req.method+": /api" + req.url + "\n\t" + JSON.stringify(req.body));
+	logger.info("\n" + req.method + ": /api" + req.url + "\n\t" + JSON.stringify(req.body, null, 4));
 	next();
 });
 
@@ -38,7 +38,6 @@ router.route('/pub/:pubId/dj')
 
 router.route('/pub/:pubId/dj/:djId')
 	.delete(security.authorize(Role.OWNER), owner.deleteDJAccount);
-// .post(djHandler.joinPub);
 
 router.route('/pub/:pubId/playlist/:playlistId/song/:songId/upvote')
 	.post(security.authorize(Role.APP), appHandler.upvoteSong);
@@ -72,10 +71,12 @@ router.route('/pub/:long/:lat')
 
 router.route('/test')
 	.get(function(req, res, next) {
-		console.log("test");
+		logger.info("test");
 		next();
 	}, function(req, res) {
-		res.status(200).json({ lala:"lala" });
+		res.status(200).json({
+			lala: "lala"
+		});
 	});
 
 module.exports = router;

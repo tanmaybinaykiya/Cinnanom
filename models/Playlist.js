@@ -6,8 +6,8 @@ var mongoose = require('mongoose'),
     SongState = require('../enums/SongState'),
     SongKind = require('../enums/SongType'),
     async = require('async'),
-    PlaylistState = require('../enums/PlaylistState');
-
+    PlaylistState = require('../enums/PlaylistState'),
+    logger= require('../logger');
 
 var PlaylistSchema = new mongoose.Schema({
     name: String,
@@ -57,7 +57,6 @@ var PlaylistManager = function() {
                 if (err) {
                     callback(err);
                 } else {
-                    console.log("saved song, pushing now:", obj);
                     newPlaylist.songs.push({
                         details: obj._id,
                         upvote_count: song.upvote_count,
@@ -101,11 +100,9 @@ var PlaylistManager = function() {
                 });
             }
         ], function(err, playlist) {
-            console.log("completed");
             if (!err && !playlist) {
                 callback("Playlist not created");
             } else {
-                console.log(err, playlist);
                 callback(err, playlist);
             }
         });
@@ -117,7 +114,6 @@ var PlaylistManager = function() {
             })
             .populate('songs.details')
             .exec(function(err, playlists) {
-                console.log("find: ", JSON.stringify(playlists));
                 if (playlists && playlists[0]) {
                     cb(null, playlists[0]);
                 } else if (playlists) {
@@ -138,7 +134,7 @@ var PlaylistManager = function() {
             upsert: false
         }, function(err, playlist) {
             if (err) {
-                console.log(err.stack.split("\n"));
+                logger.error("Error updating playlist by Id:", err.stack.split("\n"));
                 cb(err);
             } else {
                 cb(null, playlist);
@@ -149,7 +145,7 @@ var PlaylistManager = function() {
     self.deletePlaylistById = function(playlistId, cb) {
         Playlist.findByIdAndRemove(playlistId, function(err) {
             if (err) {
-                console.log(err.stack.split("\n"));
+                logger.error("Error deleting Playlist By Id",err.stack.split("\n"));
             }
             cb(err);
         });
@@ -175,7 +171,7 @@ var PlaylistManager = function() {
             playlist.save(callback);
         }], function(err, playlist) {
             if (err) {
-                console.error(err);
+                logger.error("Error updateSong", err);
             }
             cb(err, playlist);
         });

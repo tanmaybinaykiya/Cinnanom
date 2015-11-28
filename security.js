@@ -1,7 +1,7 @@
-var jwt = require('jsonwebtoken');
-
-var User = require('./models/User');
-var config = require('./config');
+var jwt = require('jsonwebtoken'),
+    logger = require('./logger'),
+    User = require('./models/User'),
+    config = require('./config');
 
 function decode(req, cb) {
     token = req.get("Authorization") || req.query.access_token || req.body.access_token || req.headers['x-access-token'];;
@@ -23,15 +23,15 @@ function verifyUser(username, email, password, callback) {
         if (err) {
             User.findByEmail(email, function(e, user) {
                 if (e) {
-                    console.log(e);
+                    logger.error("findByEmail", e);
                     callback('INTERNAL_SERVER_ERROR');
                 } else if (user && user.password !== password) {
-                    console.log('Email password do not match');
+                    logger.error('Email password do not match');
                     callback('Email password do not match');
                 } else if (user) {
                     callback(null, user);
                 } else {
-                    console.log('User not found: ' +
+                    logger.error('User not found: ' +
                         '{ ' +
                         'username:' + username + ', ' +
                         'email:' + email + ', ' +
@@ -41,12 +41,12 @@ function verifyUser(username, email, password, callback) {
                 }
             });
         } else if (user && user.password !== password) {
-            console.log('Username password do not match');
+            logger.error('Username password do not match');
             callback('Username password do not match');
         } else if (user) {
             callback(null, user);
         } else {
-            console.log('User not found: ' +
+            logger.error('User not found: ' +
                 '{ ' +
                 'username:' + username + ', ' +
                 'email:' + email + ', ' +
@@ -77,7 +77,7 @@ var security = module.exports = new function() {
                         token: access_token
                     });
                 } else {
-                    console.log(err);
+                    logger.error("Error generating Token", err.stack.split("\n"));
                     res.status(401).json({
                         error: err
                     });
@@ -95,7 +95,7 @@ var security = module.exports = new function() {
                         error: err
                     });
                 } else if (!err && decoded && decoded.role === role) {
-                    console.log("Role: ", role);
+                    logger.info("Role: ", role);
                     next();
                 } else {
                     res.status(403).json({

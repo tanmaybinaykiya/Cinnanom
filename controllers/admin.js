@@ -1,5 +1,7 @@
-var User = require('../models/User');
-var Role = require('../enums/Role');
+var User = require('../models/User'),
+	Role = require('../enums/Role'),
+	logger = require('../logger');
+
 
 var AdminHandler = function() {
 	var self = this;
@@ -26,15 +28,14 @@ var AdminHandler = function() {
 				password: request.body.password,
 				email: '' || request.body.email,
 				role: Role.OWNER
-			}, function(err, obj){
-				if(err){
+			}, function(err, obj) {
+				if (err) {
 					response.status(404).json({
 						error: 'User or password not passed'
 					});
-				}else if(obj){
-					console.log(err, obj);
+				} else if (obj) {
 					response.status(201).json(obj);
-				}else{
+				} else {
 					response.status(500).end();
 				}
 			});
