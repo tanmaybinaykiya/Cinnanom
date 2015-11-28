@@ -93,8 +93,4 @@ var security = module.exports = new function() {
 
         }
     }
-
-    self.registerAppUser = function(req, res){
-        
-    };
 }

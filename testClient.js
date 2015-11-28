@@ -219,43 +219,46 @@ function getDJToken(next) {
     });
 }
 
-function createPlaylist(next) {
-    console.log("createPlaylist");
-    var reqObj = {
-        name: 'Playlist1',
-        genre: 'someGenre',
-        state: 'INACTIVE',
-        songs: [{
-            details: {
-                song_name: 'Stringsssssssssssssss',
-                song_genre: 'String',
-                song_artist: 'String',
-                song_album: 'String',
-                song_year: 2010,
-                song_composer: 'String',
-                song_lyrics: 'String'
+
+function createPlaylist(count, next) {
+    return function(next) {
+        console.log("createPlaylist");
+        var reqObj = {
+            name: 'Playlist' + count,
+            genre: 'someGenre',
+            state: 'INACTIVE',
+            songs: [{
+                details: {
+                    song_name: 'Strings',
+                    song_genre: 'String',
+                    song_artist: 'String',
+                    song_album: 'String',
+                    song_year: 2010,
+                    song_composer: 'String',
+                    song_lyrics: 'String'
+                }
+            }, {
+                details: {
+                    song_name: 'String2ssssssssssssssss',
+                    song_genre: 'String2',
+                    song_artist: 'String2',
+                    song_album: 'String2',
+                    song_year: 2010,
+                    song_composer: 'String2',
+                    song_lyrics: 'String2'
+                }
+            }]
+        };
+        putCall('/pub/' + pub._id + '/playlist?access_token=' + djToken, reqObj, function(err, obj) {
+            if (err) {
+                console.log(err);
+            } else {
+                pub = obj;
+                console.log("Saving pub: ", pub);
+                next();
             }
-        }, {
-            details: {
-                song_name: 'String2ssssssssssssssss',
-                song_genre: 'String2',
-                song_artist: 'String2',
-                song_album: 'String2',
-                song_year: 2010,
-                song_composer: 'String2',
-                song_lyrics: 'String2'
-            }
-        }]
-    };
-    putCall('/pub/' + pub._id + '/playlist?access_token=' + djToken, reqObj, function(err, obj) {
-        if (err) {
-            console.log(err);
-        } else {
-            pub = obj;
-            console.log("Saving pub: ", pub);
-            next();
-        }
-    });
+        });
+    }
 }
 
 function getPlayList(next) {
@@ -326,9 +329,22 @@ function getCurrentPlaylist(next) {
             console.log(err);
         } else if (obj) {
             console.log("playlist:", JSON.stringify(obj));
-            userPlaylist = obj;
-            song = obj.songs[0].details;
-            next();
+            if (obj.songs.length === 2 && obj.songs[0].details._id) {
+                console.log("population SUCCESS");
+                userPlaylist = obj;
+                song = obj.songs[0].details;
+                next();
+            } else if (obj.songs.length === 2 && obj.songs[0].details) {
+                console.log("population failed");
+                userPlaylist = obj;
+                song = {
+                    _id: obj.songs[0].details
+                };
+                next();
+            } else {
+                next("population failed");
+            }
+
         } else {
             console.log("no playlist:");
         }
@@ -337,12 +353,11 @@ function getCurrentPlaylist(next) {
 
 function upvoteSong(next) {
     console.log("upvoteSong");
-    postCall('/pub/' + pub._id + '/playlist/' + playlist._id + '/song/' + song._id + '/upvote&access_token=' + userToken, null, function(err, obj) {
+    postCall('/pub/' + pub._id + '/playlist/' + playlist._id + '/song/' + song._id + '/upvote?access_token=' + userToken, null, function(err) {
         if (err) {
             console.log("err:" + err);
             next(err);
         } else {
-            console.log("song Updated: " + obj);
             next();
         }
     });
@@ -354,12 +369,12 @@ function updateSong(updateState, updateType, next) {
     if (updateState) {
         path = path + '?state=' + updateState;
     } else if (updateType) {
-        path = path + '?type=' + updateType;
+        path = path + '?kind=' + updateType;
     } else {
         console.log("update without params")
         next();
     }
-    postCall(path + '&access_token=' + userToken, null, function(err, obj) {
+    postCall(path + '&access_token=' + djToken, null, function(err, obj) {
         if (err) {
             console.log("err:" + err)
         } else {
@@ -379,7 +394,9 @@ function updateSongState(next) {
     updateSong('PLAYING', null, next);
 }
 
-function getPubListByGeoTag(next) {}
+function getPubListByGeoTag(next) {
+
+}
 
 function testCall(next) {
     console.log("test");
@@ -396,7 +413,7 @@ function testCall(next) {
 
 // testCall();
 async.waterfall([
-    // testCall,
+    testCall,
     getAdminToken,
     registerOwner,
     getOwnerToken,
@@ -404,7 +421,8 @@ async.waterfall([
     getPubDetails,
     registerDJ,
     getDJToken,
-    createPlaylist,
+    createPlaylist(1),
+    createPlaylist(2),
     getPlayList,
     setPlaylistActive,
     registerUser,

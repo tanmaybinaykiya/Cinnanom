@@ -1,5 +1,6 @@
 var Pub = require('../models/Pub'),
     User = require('../models/User'),
+    Playlist = require('../models/Playlist'),
     Role = require('../enums/Role');
 
 var AppHandler = function() {
@@ -67,7 +68,6 @@ var AppHandler = function() {
                 } else if (playlist) {
                     response.status(200).json(playlist);
                 } else {
-                    console.log("laalallalalala: ",err, playlist);
                     response.status(404).json({
                         error: 'No Active Playlist found'
                     });
@@ -81,12 +81,17 @@ var AppHandler = function() {
     };
 
     self.upvoteSong = function(request, response) {
+        console.log("upvoteSong");
         // TODO
         // authorize
         // check pub-playlist association
         if (request.params.pubId && request.params.playlistId && request.params.songId) {
-            Playlist.upvoteSong(playlistId, songId, function(err) {
+            var playlistId=request.params.playlistId,
+                songId=request.params.songId;
+
+            Playlist.upvoteSong(playlistId, songId, function(err, playlist) {
                 if (err) {
+                    console.log("err: ", err);
                     response.status(500).json({
                         error: err
                     });
@@ -95,6 +100,7 @@ var AppHandler = function() {
                 }
             });
         } else {
+            console.log(request.params.pubId, request.params.playlistId, request.params.songId);
             response.status(404).json({
                 error: 'PlaylistId or SongId not provided'
             });

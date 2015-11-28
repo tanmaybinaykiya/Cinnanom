@@ -40,13 +40,8 @@ router.route('/pub/:pubId/dj/:djId')
 	.delete(security.authorize(Role.OWNER), owner.deleteDJAccount);
 // .post(djHandler.joinPub);
 
-router.route('/pub/:pubId/playlist')
-	.put(security.authorize(Role.DJ), djHandler.createPlaylist);
-
-router.route('/pub/:pubId/playlist/:playlistId')
-	.get(security.authorize(Role.DJ), djHandler.getPlaylist)
-	.post(security.authorize(Role.DJ), djHandler.updatePlaylist)
-	.delete(security.authorize(Role.DJ), djHandler.deletePlaylist);
+router.route('/pub/:pubId/playlist/:playlistId/song/:songId/upvote')
+	.post(security.authorize(Role.APP), appHandler.upvoteSong);
 
 router.route('/pub/:pubId/playlist/:playlistId/song')
 	.put(security.authorize(Role.DJ), djHandler.addSong);
@@ -57,6 +52,14 @@ router.route('/pub/:pubId/playlist/:playlistId/song/:songId')
 router.route('/pub/:pubId/playlist/:playlistId/song/:songId')
 	.post(security.authorize(Role.DJ), djHandler.updateSong);
 
+router.route('/pub/:pubId/playlist')
+	.put(security.authorize(Role.DJ), djHandler.createPlaylist);
+
+router.route('/pub/:pubId/playlist/:playlistId')
+	.get(security.authorize(Role.DJ), djHandler.getPlaylist)
+	.post(security.authorize(Role.DJ), djHandler.updatePlaylist)
+	.delete(security.authorize(Role.DJ), djHandler.deletePlaylist);
+
 router.route('/user/register')
 	.put(appHandler.register);
 
@@ -66,15 +69,13 @@ router.route('/pub/:pubId/playlist')
 router.route('/pub/:long/:lat')
 	.get(security.authorize(Role.APP), appHandler.getPubListByGeoTag);
 
-router.route('/pub/:pubId/playlist/:playlistId/song/:songId/upvote')
-	.post(security.authorize(Role.APP), appHandler.upvoteSong);
 
 router.route('/test')
 	.get(function(req, res, next) {
 		console.log("test");
 		next();
 	}, function(req, res) {
-		res.status(204).json({});
+		res.status(200).json({ lala:"lala" });
 	});
 
 module.exports = router;

@@ -143,7 +143,10 @@ var PubManager = function() {
 			}).populate({
 				path: 'playlists.details',
 				match: filters,
-				limit: limit
+				limit: limit,
+				populate: {
+					path: 'songs.details'
+				}
 			})
 			.exec(function(err, pubs) {
 				if (err) {
@@ -163,59 +166,62 @@ var PubManager = function() {
 	}
 
 	this.setActivePlaylist = function(pubId, playlistId, state, cb) {
-		this.getFilteredPlaylist(pubId, {
-			_id: playlistId
-		}, 5, function(err, pubs) {
-			if (err) {
-				cb(err);
-				return;
-			} else if (pubs && pubs[0] && pubs[0].playlists && pubs[0].playlists[0]) {
+		var self = this;
+		async.waterfall([function(callback) {
+			self.getFilteredPlaylist(pubId, {
+				_id: playlistId
+			}, 5, callback);
+		}, function(pubs, callback) {
+			if (pubs && pubs[0] && pubs[0].playlists && pubs[0].playlists[0]) {
 				if (state === pubs[0].playlists[0].state) {
-					cb(204);
-					return;
+					callback(204);
+				} else {
+					pubs[0].playlists[0].state = state;
+					callback(null, pubs[0]);
 				}
-				pubs[0].playlists[0].state = state;
 			} else {
-				// console.log("pub:", pub);
-				// console.log("playlists:", pub.playlists);
-				// console.log("playlists[0]:", pub.playlists[0]);
-				cb('Not FOUND')
-				return;
+				callback('Not FOUND')
 			}
-			pubs[0].save(function(e, pubFound) {
+		}, function(pub, callback) {
+			pub.save(function(e, pubSaved) {
 				if (e) {
 					console.log(e.stack.split("\n"));
 				}
-				cb(e, pubFound);
+				callback(e, pubSaved);
 			});
+		}], function(err, pub) {
+			cb(err, pub);
 		});
 	}
 
 	this.getActivePlaylist = function(pubId, limit, cb) {
-		Pub.find({
+		Pub.findOne({
 				_id: pubId
 			}).populate({
 				path: 'playlists',
 				match: {
 					state: PlaylistState.ACTIVE
 				},
-				limit: 5
+				limit: 1,
+				populate: {
+					path: 'details',
+					populate: {
+						path: 'songs'
+					}
+				}
 			})
-			.populate('playlists.details')
-			.populate('playlists.details.songs')
-			.populate('playlists.details.songs.details')
-			.exec(function(err, pubs) {
+			.exec(function(err, pub) {
 				if (err) {
 					console.log(err);
 					cb(err);
-				} else if (pubs && pubs[0] && pubs[0].playlists && pubs[0].playlists[0] && pubs[0].playlists[0].details) {
-					console.log('pubs: ' + JSON.stringify(pubs));
-					cb(null, pubs[0].playlists[0].details);
+				} else if (pub && pub && pub.playlists && pub.playlists[0] && pub.playlists[0].details) {
+					console.log('pub: ' + JSON.stringify(pub));
+					cb(null, pub.playlists[0].details);
 				} else {
-					console.log('pubs: ' + pubs);
-					console.log('pubs0: ' + pubs[0]);
-					console.log('playlists: ' + pubs[0].playlists);
-					console.log('playlists0: ' + pubs[0].playlists[0]);
+					console.log('pubs: ' + pub);
+					console.log('pubs0: ' + pub);
+					console.log('playlists: ' + pub.playlists);
+					console.log('playlists0: ' + pub.playlists[0]);
 					cb('INTERNAL_ERROR');
 				}
 			});

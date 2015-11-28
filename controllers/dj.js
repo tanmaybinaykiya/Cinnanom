@@ -169,11 +169,11 @@ var DJHandler = function() {
                     res.status(200).end();
                 }
             });
-        } else if (req.params.pubId && req.params.playlistId && req.params.songId && req.query.type) {
+        } else if (req.params.pubId && req.params.playlistId && req.params.songId && req.query.kind) {
             var playlistId = req.params.playlistId,
                 songId = req.params.songId,
-                type = req.query.type;
-            Playlist.updateSongType(playlistId, songId, type, function(err) {
+                kind = req.query.kind;
+            Playlist.updateSongKind(playlistId, songId, kind, function(err) {
                 if (err) {
                     console.log(err);
                     res.status(404).json({

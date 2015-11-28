@@ -80,25 +80,23 @@ var PlaylistManager = function() {
                 cb(null, newPlaylist);
             },
             function(newPlaylist, cb) {
-                sortSongsByUpvoteCount(playlist, function(err, playlist){
+                sortSongsByUpvoteCount(playlist, function(err, playlist) {
                     cb(err, playlist, newPlaylist);
                 });
             },
             function(playlist, newPlaylist, cb) {
                 _.each(playlist.songs, function(song, index, list) {
-                    pushSong(song, newPlaylist, function(err){
-                        if(err){
+                    pushSong(song, newPlaylist, function(err) {
+                        if (err) {
                             cb(err);
-                        } 
-                        else if( index==(list.length-1) ){
-                            console.log("xxxxxxxxxxxxxxxx:",index, list);
+                        } else if (list.length - index === 1) {
                             cb(null, newPlaylist);
                         }
                     });
                 });
             },
             function(newPlaylist, cb) {
-                Playlist.create(newPlaylist, function(err, cPlaylist){
+                Playlist.create(newPlaylist, function(err, cPlaylist) {
                     cb(err, cPlaylist);
                 });
             }
@@ -117,11 +115,10 @@ var PlaylistManager = function() {
         Playlist.find({
                 _id: playlistId
             })
-            .populate("songs")
-            .populate("songs.details")
+            .populate('songs.details')
             .exec(function(err, playlists) {
-                console.log("find: ", playlists);
-                if (playlist && playlists[0]) {
+                console.log("find: ", JSON.stringify(playlists));
+                if (playlists && playlists[0]) {
                     cb(null, playlists[0]);
                 } else if (playlists) {
                     cb("Something is wrong, playlists: ", playlists);
@@ -158,67 +155,60 @@ var PlaylistManager = function() {
         });
     }
 
-    self.updateSongKind = function(playlistId, songId, kind, cb) {
-        self.findPlaylistById(playlistId, function(err, playlist) {
-            if (err) {
-                console.log(err.stack.split("\n"));
-                cb(err);
+    self.updateSong = function(playlistId, songId, updateFunc, cb) {
+        var self= this;
+        async.waterfall([function(callback) {
+            self.findPlaylistById(playlistId, callback);
+        }, function(playlist, callback) {
+            var song = _.find(playlist.songs, function(song) {
+                if (song.details._id == songId) {
+                    return true;
+                }
+                return false;
+            });
+            if (song) {
+                updateFunc(song, playlist, callback);
             } else {
-                var songIndex = _.findIndex(playlist.songs, function(song) {
-                    if (song.details && song.details._id && song.details._id === songId) {
-                        return true;
-                    }
-                    return false;
-                });
-                playlist.songs[songIndex].kind = kind;
-                this.updatePlaylistById(playlistId, playlist, function(err) {
-                    console.log(err.stack.split("\n"));
-                    cb(err);
-                });
+                callback('song Not Found');
             }
+        }, function(playlist, callback) {
+            playlist.save(callback);
+        }], function(err, playlist) {
+            if (err) {
+                console.error(err);
+            }
+            cb(err, playlist);
         });
+    }
+
+
+    self.updateSongKind = function(playlistId, songId, kind, cb) {
+        this.updateSong(playlistId, songId, function(song, playlist, callback) {
+            if (song.kind == kind) {
+                callback(204);
+            } else {
+                song.kind = kind;
+                callback(null, playlist);
+            }
+        }, cb);
     }
 
     self.updateSongState = function(playlistId, songId, state, cb) {
-        self.findPlaylistById(playlistId, function(err, playlist) {
-            if (err) {
-                console.log(err.stack.split("\n"));
-                cb(err);
+         this.updateSong(playlistId, songId, function(song, playlist, callback) {
+            if (song.state == state) {
+                callback(204);
             } else {
-                var songIndex = _.findIndex(playlist.songs, function(song) {
-                    if (song.details && song.details._id && song.details._id === songId) {
-                        return true;
-                    }
-                    return false;
-                });
-                playlist.songs[songIndex].state = state;
-                this.updatePlaylistById(playlistId, playlist, function(err) {
-                    console.log(err.stack.split("\n"));
-                    cb(err);
-                });
+                song.state = state;
+                callback(null, playlist);
             }
-        });
+        }, cb);
     }
 
     self.upvoteSong = function(playlistId, songId, cb) {
-        self.findPlaylistById(playlistId, function(err, playlist) {
-            if (err) {
-                console.log(err.stack.split("\n"));
-                cb(err);
-            } else {
-                var songIndex = _.findIndex(playlist.songs, function(song) {
-                    if (song.details && song.details._id && song.details._id === songId) {
-                        return true;
-                    }
-                    return false;
-                });
-                playlist.songs[songIndex].upvote_count = playlist.songs[songIndex].upvote_count + 1;
-                this.updatePlaylistById(playlistId, playlist, function(err) {
-                    console.log(err.stack.split("\n"));
-                    cb(err);
-                });
-            }
-        });
+         this.updateSong(playlistId, songId, function(song, playlist, callback) {
+                song.upvote_count = song.upvote_count + 1;
+                callback(null, playlist);
+        }, cb);
     }
 }
 
