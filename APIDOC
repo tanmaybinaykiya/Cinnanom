@@ -1,0 +1,328 @@
+Method: Get Admin Token
+Path: /api/token
+METHOD: POST
+Role: 
+Request Obj: {
+    "username": "tanmay",
+    "password": "password",
+    "email": "someEmail"
+}
+StatusCode: 200
+Response: {
+    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQURNSU4iLCJ1c2VyX2lkIjoiNTY1MGFjZWY1YjQ1YjExZmE0NDU2MDIzIiwiaWF0IjoxNDQ4Nzg5MDMxLCJleHAiOjE0NDg3OTI2MzF9.8P1XSlNG5YZ7H-tVtHcNxkSs2qB-mMs6F3PuUjUzZsU"
+}
+***************************************************************************
+
+Method: Register Owner
+Path: /api/owner/register
+METHOD: PUT
+Role: 
+Request Obj: {
+    "username": "owner",
+    "password": "ownerPassword",
+    "email": "ownerEmail"
+}
+StatusCode: 201
+Response: {
+    "__v": 0,
+    "username": "owner",
+    "password": "ownerPassword",
+    "email": "ownerEmail",
+    "role": "OWNER",
+    "_id": "565ac427164f7e3e26a9889a"
+}
+***************************************************************************
+
+Method: Get Owner Token
+Path: /api/token
+METHOD: POST
+Role: 
+Request Obj: {
+    "__v": 0,
+    "username": "owner",
+    "password": "ownerPassword",
+    "email": "ownerEmail",
+    "role": "OWNER",
+    "_id": "565ac427164f7e3e26a9889a"
+}
+StatusCode: 200
+Response: {
+    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiT1dORVIiLCJ1c2VyX2lkIjoiNTY1OWZkMTExNWZjYTI1YzE0MmE1NTRiIiwiaWF0IjoxNDQ4Nzg5MDMxLCJleHAiOjE0NDg3OTI2MzF9.N3ZtN6AWtu7dFrnXIwGA30ipv91x73dfLBYP9jM35ys"
+}
+***************************************************************************
+
+Method: Register Pub
+Path: /api/pub/register
+{pubId}PUT
+Role: 
+Request Obj: {
+    "name": "Pub",
+    "address": "PubAddress",
+    "genre": "genre",
+    "loc": [
+        12,
+        13
+    ]
+}
+StatusCode: 201
+Response: {
+    "__v": 0,
+    "name": "Pub",
+    "address": "PubAddress",
+    "loc": [
+        12,
+        13
+    ],
+    "genre": "genre",
+    "_id": "565ac427164f7e3e26a9889b"
+}
+***************************************************************************
+
+Method: Get Pub Details
+Path: /api/pub/{pubId}
+METHOD: GET
+Role: 
+StatusCode: 200
+Response: {
+    "_id": "565ac427164f7e3e26a9889b",
+    "name": "Pub",
+    "address": "PubAddress",
+    "loc": [
+        12,
+        13
+    ],
+    "genre": "genre",
+    "__v": 0,
+    "playlists": []
+}
+***************************************************************************
+
+Method: Register DJ
+Path: /api/pub/{pubId}/dj
+METHOD: PUT
+Role: 
+Request Obj: {
+    "username": "djName",
+    "password": "djPassword",
+    "email": "djEmail"
+}
+StatusCode: 201
+Response: {
+    "__v": 0,
+    "username": "djName",
+    "password": "djPassword",
+    "email": "djEmail",
+    "role": "DJ",
+    "_id": "565ac427164f7e3e26a9889c"
+}
+***************************************************************************
+
+Method: Get DJ Token
+Path: /api/token
+METHOD: POST
+Role: 
+Request Obj: {
+    "__v": 0,
+    "username": "djName",
+    "password": "djPassword",
+    "email": "djEmail",
+    "role": "DJ",
+    "_id": "565ac427164f7e3e26a9889c"
+}
+StatusCode: 200
+Response: {
+    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiREoiLCJ1c2VyX2lkIjoiNTY1OWZkMTExNWZjYTI1YzE0MmE1NTRkIiwiaWF0IjoxNDQ4Nzg5MDMxLCJleHAiOjE0NDg3OTI2MzF9.dimzCK99bc7cFUKOt50fHXJkDRAg9cYmFm-CuRXj5bM"
+}
+***************************************************************************
+
+Method: Create Playlist
+Path: /api/pub/{pubId}/playlist
+METHOD: PUT
+Role: 
+Request Obj: {
+    "name": "Playlist1",
+    "genre": "someGenre",
+    "state": "INACTIVE",
+    "songs": [
+        {
+            "details": {
+                "song_name": "Strings",
+                "song_genre": "String",
+                "song_artist": "String",
+                "song_album": "String",
+                "song_year": 2010,
+                "song_composer": "String",
+                "song_lyrics": "String"
+            }
+        },
+        {
+            "details": {
+                "song_name": "String2ssssssssssssssss",
+                "song_genre": "String2",
+                "song_artist": "String2",
+                "song_album": "String2",
+                "song_year": 2010,
+                "song_composer": "String2",
+                "song_lyrics": "String2"
+            }
+        }
+    ]
+}
+StatusCode: 201
+Response: {
+    "_id": "565ac427164f7e3e26a9889b",
+    "name": "Pub",
+    "address": "PubAddress",
+    "loc": [
+        12,
+        13
+    ],
+    "genre": "genre",
+    "__v": 1,
+    "playlists": [
+        {
+            "details": "565ac427164f7e3e26a9889d",
+            "state": "INACTIVE",
+            "_id": "565ac427164f7e3e26a988a2"
+        }
+    ]
+}
+***************************************************************************
+
+Method: Get Playlist
+Path: /api/pub/{pubId}/playlist/{playlistId}
+METHOD: GET
+Role: 
+StatusCode: 200
+Response: {
+    "_id": "565ac427164f7e3e26a9889d",
+    "genre": "someGenre",
+    "name": "Playlist1",
+    "__v": 0,
+    "songs": [
+        {
+            "details": {
+                "_id": "565ac427164f7e3e26a9889e",
+                "song_name": "Strings",
+                "song_genre": "String",
+                "song_artist": "String",
+                "song_album": "String",
+                "song_year": 2010,
+                "song_composer": "String",
+                "song_lyrics": "String",
+                "__v": 0
+            },
+            "upvote_count": 0,
+            "state": "QUEUED",
+            "kind": "NOT_FROZEN",
+            "_id": "565ac427164f7e3e26a988a0"
+        },
+        {
+            "details": {
+                "_id": "565ac427164f7e3e26a9889f",
+                "song_name": "String2ssssssssssssssss",
+                "song_genre": "String2",
+                "song_artist": "String2",
+                "song_album": "String2",
+                "song_year": 2010,
+                "song_composer": "String2",
+                "song_lyrics": "String2",
+                "__v": 0
+            },
+            "upvote_count": 0,
+            "state": "QUEUED",
+            "kind": "NOT_FROZEN",
+            "_id": "565ac427164f7e3e26a988a1"
+        }
+    ]
+}
+***************************************************************************
+
+Method: Set Playlist Active
+Path: /api/pub/{pubId}/playlist/{playlistId}?state=ACTIVE
+METHOD: POST
+Role: 
+StatusCode: 200
+Response: {}
+***************************************************************************
+
+Method: Register User
+Path: /api/user/register
+METHOD: PUT
+Role: 
+Request Obj: {
+    "username": "appName",
+    "password": "appPassword",
+    "email": "appEmail",
+    "geoLocation": [
+        12,
+        13
+    ]
+}
+StatusCode: 201
+Response: {
+    "__v": 0,
+    "username": "appName",
+    "password": "appPassword",
+    "email": "appEmail",
+    "role": "APP",
+    "_id": "565ac427164f7e3e26a988a3"
+}
+***************************************************************************
+
+Method: Get User Token
+Path: /api/token
+METHOD: POST
+Role: 
+Request Obj: {
+    "__v": 0,
+    "username": "appName",
+    "password": "appPassword",
+    "email": "appEmail",
+    "role": "APP",
+    "_id": "565ac427164f7e3e26a988a3"
+}
+StatusCode: 200
+Response: {
+    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQVBQIiwidXNlcl9pZCI6IjU2NTlmZDExMTVmY2EyNWMxNDJhNTU1YSIsImlhdCI6MTQ0ODc4OTAzMSwiZXhwIjoxNDQ4NzkyNjMxfQ.eh8BV8xoe0wY6HP0b9AOSjrS-IXY8EPVLIMEN65hLNg"
+}
+***************************************************************************
+
+Method: Get Current Playlist
+Path: /api/pub/{pubId}/playlist
+METHOD: GET
+Role: 
+StatusCode: 200
+Response: {
+    "_id": "565ac427164f7e3e26a9889d",
+    "genre": "someGenre",
+    "name": "Playlist1",
+    "__v": 0,
+    "songs": [
+        {
+            "details": "565ac427164f7e3e26a9889e",
+            "upvote_count": 0,
+            "state": "QUEUED",
+            "kind": "NOT_FROZEN",
+            "_id": "565ac427164f7e3e26a988a0"
+        },
+        {
+            "details": "565ac427164f7e3e26a9889f",
+            "upvote_count": 0,
+            "state": "QUEUED",
+            "kind": "NOT_FROZEN",
+            "_id": "565ac427164f7e3e26a988a1"
+        }
+    ]
+}
+***************************************************************************
+
+Method: Upvote Song
+Path: /api/pub/{pubId}/playlist/{playlistId}/song/{songId}/upvote
+METHOD: POST
+Role: 
+StatusCode: 200
+Response: {}
+***************************************************************************
+
+Method: Update Song Type
