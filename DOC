@@ -1,38 +1,44 @@
-P1 [done]	register admin //db call 
+access_token can be sent as a header: 	Header : Authorization:[token] 
+										Query param ?access_token:[token]
+										Header(x-access-token):[token]
+401 = wrong access_token
+403 = authorization failure // check token
 
-P1 [done]	get auth token for admin 
-P1 [done]	register owner [admin token] 
 
-P1 [done]	get token for owner 
-P1 [done]	register pub [owner token] 
-P1 [done]	register dj [owner token] 
+P1 [done]		register admin //db call 
 
-P1 [done]	get token for dj 
-P1 [broken]	create playlist [dj token] // for playlists handle both, song-object ids as well as song json 
+P1 [done]		get auth token for admin 
+P1 [done]		register owner [admin token] 
 
-P1 [ready for testing]	get playlist [dj token] // filters pagination .. always sorted by voteCount 
-P1 [done]	update playlist : [dj token] 
-P2 [not done]		add/remove songs 		
-P1 [ready for testing]		change song state // states: Now playing, Next, Queued,  ; assert playlist active
+P1 [done]		get token for owner 
+P1 [done]		register pub [owner token] 
+P1 [done]		register dj [owner token] 
 
-P1 [done]	register user // contains geotag 
-P1 [done]	get user token // contains geotag 
+P1 [done]		get token for dj 
+P1 [done]		create playlist [dj token] 			// for playlists handle both, song-object ids as well as song json 
 
-P1 [done]	get pub-list by geotag [user token] 
-P1 [done]	join pub [user token] 
-P1 [done]	get playlist [user token] 
-P1 [done]	upvote song [user token] => update playlist order, send notification to GCM. on notification, dj asks for updated playlist
+P1 [done]		get playlist [dj token] 			// filters pagination .. always sorted by voteCount 
+P1 [done]		update playlist : [dj token] 
+P2 [not done]	add/remove songs 		
+P1 [done]		change song state 					// ?states: Playing, Next, Queued,  ; assert playlist active ?kind:FROZEN, NOT_FROZEN
+
+P1 [done]		register user     					// contains geotag 
+P1 [done]		get user token    					// contains geotag 
+
+P1 [not yet]	get pub-list by geotag [user token] 
+P1 [done]		join pub [user token] 
+P1 [done]		get playlist [user token] 
+P1 [done]		upvote song [user token] => update playlist order, send notification to GCM. on notification, dj asks for updated playlist
 
 //cleanups
 
 extend models
 have models return functions, so that models need not be included
 
-P3[APIs to be added] add song to DB,
-P3[APIs to be added] remove song from DB,
-P2[APIs to be added] add song from playlist, 
+P3[APIs to be added] add song,
+P3[APIs to be added] remove song,
+P2[APIs to be added] add song to playlist, 
 P2[APIs to be added] remove song from playlist,
 
 update meta for song,
 setActive
-async.paralle to save songs
