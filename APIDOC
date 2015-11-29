@@ -320,9 +320,63 @@ Response: {
 Method: Upvote Song
 Path: /api/pub/{pubId}/playlist/{playlistId}/song/{songId}/upvote
 METHOD: POST
-Role: 
+Role: APP
 StatusCode: 200
 Response: {}
 ***************************************************************************
-
 Method: Update Song Type
+Path: /api/pub/565acd3ca8c5c5822a026341/playlist/565acd3ca8c5c5822a026343/song/565acd3ca8c5c5822a026344?kind=FROZEN
+METHOD: POST
+Role: DJ
+StatusCode: 200
+Response: {}
+***************************************************************************
+Method: Update Song State
+Path: /api/pub/565acd3ca8c5c5822a026341/playlist/565acd3ca8c5c5822a026343/song/565acd3ca8c5c5822a026344?state=PLAYING
+METHOD: POST
+Role: DJ
+StatusCode: 200
+Response: {}
+***************************************************************************
+Method: Get PubList By Geo Tag
+Path: /api/pub?long=12.0001&lat=13.0001
+METHOD: GET
+Role: APP
+StatusCode: 200
+Response: [
+    {
+        "_id": "565ac0baea858e7a212c17be",
+        "name": "Pub",
+        "address": "PubAddress",
+        "loc": [
+            12,
+            13
+        ],
+        "genre": "genre",
+        "__v": 1,
+        "playlists": [
+            {
+                "details": "565ac0baea858e7a212c17c0",
+                "state": "ACTIVE",
+                "_id": "565ac0baea858e7a212c17c5"
+            }
+        ]
+    },
+    {
+        "_id": "565ac0baea858e7a212c17be",
+        "name": "Pub",
+        "address": "PubAddress",
+        "loc": [
+            12,
+            13
+        ],
+        "genre": "genre",
+        "__v": 1,
+        "playlists": [
+            {
+                "details": "565ac0baea858e7a212c17c0",
+                "state": "ACTIVE",
+                "_id": "565ac0baea858e7a212c17c5"
+            }
+        ]
+    }]

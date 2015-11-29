@@ -33,6 +33,7 @@ function configureApp() {
 
 	var port = process.env.PORT || 8080; // set our port
 	app.set('port', port);
+	app.disable('x-powered-by')
 	app.use(bodyParser.urlencoded({
 		extended: true
 	}));

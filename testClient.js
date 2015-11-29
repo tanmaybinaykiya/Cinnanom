@@ -4,17 +4,36 @@ var async = require('async');
 var hostname = "localhost";
 var port = 8080;
 
-http.globalAgent.maxSockets = Infinity;
+http.globalAgent.maxSockets = 1;
 
-function getCall(path, cb) {
+function logRequest(options, statusCode, obj, response) {
+    console.log("APIDOC Path: " + options.path);
+    console.log("APIDOC METHOD: " + options.method);
+    console.log("APIDOC Role: ");
+    if (obj) {
+        console.log("APIDOC Request Obj: " + JSON.stringify(obj, null, 4));
+    }
+    console.log("APIDOC StatusCode: " + statusCode);
+    console.log("APIDOC Response: " + JSON.stringify(response, null, 4));
+    console.log("***************************************************************************");
+}
+
+function getCall(path, token, cb) {
     var options = {
         host: hostname,
         port: port,
         path: '/api' + path,
         method: 'GET'
     };
+
+    if (token) {
+        options.headers = {
+            'Authorization': token
+        };
+    }
     var req = http.request(options, function(res) {
         res.on('data', function(data) {
+            logRequest(options, res.statusCode, null, JSON.parse(data));
             if (res.statusCode > 300) {
                 if (data) {
                     cb(res.statusCode + '' + data);
@@ -37,7 +56,7 @@ function getCall(path, cb) {
     });
 }
 
-function postCall(path, obj, cb) {
+function postCall(path, obj, token, cb) {
     var options = {
         host: hostname,
         port: port,
@@ -47,15 +66,17 @@ function postCall(path, obj, cb) {
         },
         path: '/api' + path
     }
+
+    if (token) {
+        options.headers.Authorization = token;
+    }
     var req = http.request(options, function(res) {
-        console.log("statusCode: ", res.statusCode);
-        if (res.statusCode > 300) {
+        if (res.statusCode > 300 || res.statusCode == 204) {
             cb(res.statusCode);
-            req.end();
             return;
         }
         res.on('data', function(d) {
-            req.end();
+            logRequest(options, res.statusCode, obj, JSON.parse(d));
             cb(null, JSON.parse(d));
             return;
         });
@@ -63,14 +84,14 @@ function postCall(path, obj, cb) {
     if (obj) {
         req.write(JSON.stringify(obj));
     }
-    req.end();
     req.on('error', function(e) {
         console.log(e);
         cb(e);
     });
+    req.end();
 }
 
-function putCall(path, obj, cb) {
+function putCall(path, obj, token, cb) {
     var options = {
         host: hostname,
         port: port,
@@ -80,14 +101,18 @@ function putCall(path, obj, cb) {
         },
         path: '/api' + path
     }
+
+    if (token) {
+        options.headers.Authorization = token;
+    }
     var req = http.request(options, function(res) {
-        console.log("statusCode: ", res.statusCode);
         if (res.statusCode > 300) {
             cb(res.statusCode);
             req.end();
             return;
         }
         res.on('data', function(d) {
+            logRequest(options, res.statusCode, obj, JSON.parse(d));
             req.end();
             cb(null, JSON.parse(d));
             return;
@@ -102,117 +127,117 @@ function putCall(path, obj, cb) {
 }
 
 function getAdminToken(next) {
-    console.log("get Admin token");
+    console.log("APIDOC Method: Get Admin Token");
     var adminObj = {
         username: 'tanmay',
         password: 'password',
         email: 'someEmail'
     }
-    postCall('/token', adminObj, function(err, res) {
+    postCall('/token', adminObj, null, function(err, res) {
         if (err) {
             console.log(err)
         } else {
             adminToken = res.token;
-            console.log("adminToken: " + adminToken);
+            // console.log("adminToken: " + adminToken);
             next();
         }
     });
 }
 
 function registerOwner(next) {
-    console.log("registerOwner");
+    console.log("APIDOC Method: Register Owner");
     var reqObj = {
         username: 'owner',
         password: 'ownerPassword',
         email: 'ownerEmail'
     }
-    putCall('/owner/register?access_token=' + adminToken, reqObj, function(err, obj) {
+    putCall('/owner/register', reqObj, adminToken, function(err, obj) {
         if (err) {
-            console.log("err:", err);
+            console.error("err:", err);
         } else {
             owner = obj;
-            console.log("Owner: " + JSON.stringify(owner, null, 4));
+            // console.log("Owner: " + JSON.stringify(owner, null, 4));
             next();
         }
     });
 }
 
 function getOwnerToken(next) {
-    console.log("get owner token");
-    postCall('/token', owner, function(err, res) {
+    console.log("APIDOC Method: Get Owner Token");
+    postCall('/token', owner, null, function(err, res) {
         if (err) {
             console.log("err:" + err)
         } else {
             ownerToken = res.token;
-            console.log("ownerToken: " + ownerToken);
+            // console.log("ownerToken: " + ownerToken);
             next();
         }
     });
 }
 
 function registerPub(next) {
-    console.log("registerPub");
+    console.log("APIDOC Method: Register Pub");
     var reqObj = {
         name: 'Pub',
         address: 'PubAddress',
         genre: 'genre',
         loc: [12, 13]
     }
-    putCall('/pub/register?access_token=' + ownerToken, reqObj, function(err, obj) {
+    putCall('/pub/register', reqObj, ownerToken, function(err, obj) {
         if (err) {
             console.log(err)
         } else {
             pub = obj;
-            console.log("Pub: " + JSON.stringify(obj, null, 4));
+            // console.log("Pub: " + JSON.stringify(obj, null, 4));
             next();
         }
     });
 }
 
 function getPubDetails(next) {
-    console.log("getPubDetails");
+    console.log("APIDOC Method: Get Pub Details");
     var reqObj = {
         name: 'Pub',
         address: 'PubAddress',
         genre: 'genre',
         loc: [12, 13]
     }
-    getCall('/pub/' + pub._id + '?access_token=' + ownerToken, function(err, obj) {
+    getCall('/pub/' + pub._id, ownerToken, function(err, obj) {
         if (err) {
             console.log(err)
         } else {
-            console.log("Pub Details: " + JSON.stringify(obj, null, 4));
+            // console.log("Pub Details: " + JSON.stringify(obj, null, 4));
             next();
         }
     });
 }
 
 function registerDJ(next) {
-    console.log("registerDJ");
+    console.log("APIDOC Method: Register DJ");
     var reqObj = {
         username: 'djName',
         password: 'djPassword',
         email: 'djEmail'
     };
-    putCall('/pub/' + pub._id + '/dj?access_token=' + ownerToken, reqObj, function(err, obj) {
+    putCall('/pub/' + pub._id + '/dj', reqObj, ownerToken, function(err, obj) {
         if (err) {
             console.log(err)
         } else {
             dj = obj;
-            console.log("DJ: " + JSON.stringify(obj, null, 4));
+            // console.log("DJ: " + JSON.stringify(obj, null, 4));
             next();
         }
     });
 }
 
 function getDJToken(next) {
-    console.log("get dj token");
-    postCall('/token', dj, function(err, res) {
+    console.log("APIDOC Method: Get DJ Token");
+    postCall('/token', dj, null, function(err, res) {
         if (err) {
             console.log("err:" + err)
         } else {
             djToken = res.token;
-            console.log("djToken: " + djToken);
+            // console.log("djToken: " + djToken);
             next();
         }
     });
@@ -221,7 +246,7 @@ function getDJToken(next) {
 
 function createPlaylist(count, next) {
     return function(next) {
-        console.log("createPlaylist");
+        console.log("APIDOC Method: Create Playlist");
         var reqObj = {
             name: 'Playlist' + count,
             genre: 'someGenre',
@@ -248,12 +273,12 @@ function createPlaylist(count, next) {
                 }
             }]
         };
-        putCall('/pub/' + pub._id + '/playlist?access_token=' + djToken, reqObj, function(err, obj) {
+        putCall('/pub/' + pub._id + '/playlist', reqObj, djToken, function(err, obj) {
             if (err) {
                 console.log(err);
             } else {
                 pub = obj;
-                console.log("Saving pub: ", pub);
+                // console.log("Saving pub: ", pub);
                 next();
             }
         });
@@ -261,14 +286,14 @@ function createPlaylist(count, next) {
 }
 
 function getPlayList(next) {
-    console.log("get playlist");
-    getCall('/pub/' + pub._id + '/playlist/' + pub.playlists[0].details + '/?access_token=' + djToken, function(err, obj) {
+    console.log("APIDOC Method: Get Playlist");
+    getCall('/pub/' + pub._id + '/playlist/' + pub.playlists[0].details, djToken, function(err, obj) {
         if (err) {
             console.log(err);
         } else {
-            console.log("playlist:", JSON.stringify(obj, null, 4));
+            // console.log("playlist:", JSON.stringify(obj, null, 4));
             if (obj.songs.length == 2 && obj.songs[0].details._id) {
-                console.log("population SUCCESS");
+                // console.log("population SUCCESS");
                 playlist = obj;
                 next();
             } else {
@@ -280,25 +305,26 @@ function getPlayList(next) {
 }
 
 function setPlaylistActive(next) {
-    console.log('setPlaylistActive');
-    postCall('/pub/' + pub._id + '/playlist/' + playlist._id + '?state=ACTIVE&access_token=' + djToken, '', function(err, obj) {
+    console.log('APIDOC Method: Set Playlist Active');
+    postCall('/pub/' + pub._id + '/playlist/' + playlist._id + '?state=ACTIVE', null, djToken, function(err, obj) {
         if (err) {
             console.log("err:" + err);
         } else {
-            console.log("playlist ACTIVE");
+            // console.log("playlist ACTIVE");
             next();
         }
     });
 }
 
 function registerUser(next) {
-    console.log('registerUser');
+    console.log('APIDOC Method: Register User');
     var reqObj = {
         username: 'appName',
         password: 'appPassword',
-        email: 'appEmail'
+        email: 'appEmail',
+        geoLocation: [12, 13]
     };
-    putCall('/user/register', reqObj, function(err, obj) {
+    putCall('/user/register', reqObj, null, function(err, obj) {
         if (err) {
             console.log(err);
         } else {
@@ -309,27 +335,27 @@ function registerUser(next) {
 }
 
 function getUserToken(next) {
-    console.log("getUserToken");
-    postCall('/token', userObj, function(err, res) {
+    console.log("APIDOC Method: Get User Token");
+    postCall('/token', userObj, null, function(err, res) {
         if (err) {
             console.log("err:" + err)
         } else {
             userToken = res.token;
-            console.log("userToken: " + djToken);
+            // console.log("userToken: " + djToken);
             next();
         }
     });
 }
 
 function getCurrentPlaylist(next) {
-    console.log("getCurrentPlaylist");
-    getCall('/pub/' + pub._id + '/playlist?access_token=' + userToken, function(err, obj) {
+    console.log("APIDOC Method: Get Current Playlist");
+    getCall('/pub/' + pub._id + '/playlist', userToken, function(err, obj) {
         if (err) {
             console.log(err);
         } else if (obj) {
-            console.log("playlist:", JSON.stringify(obj, null, 4));
+            // console.log("playlist:", JSON.stringify(obj, null, 4));
             if (obj.songs.length === 2 && obj.songs[0].details._id) {
-                console.log("population SUCCESS");
+                // console.log("population SUCCESS");
                 userPlaylist = obj;
                 song = obj.songs[0].details;
                 next();
@@ -351,8 +377,8 @@ function getCurrentPlaylist(next) {
 }
 
 function upvoteSong(next) {
-    console.log("upvoteSong");
-    postCall('/pub/' + pub._id + '/playlist/' + playlist._id + '/song/' + song._id + '/upvote?access_token=' + userToken, null, function(err) {
+    console.log("APIDOC Method: Upvote Song");
+    postCall('/pub/' + pub._id + '/playlist/' + playlist._id + '/song/' + song._id + '/upvote', null, userToken, function(err) {
         if (err) {
             console.log("err:" + err);
             next(err);
@@ -370,41 +396,50 @@ function updateSong(updateState, updateType, next) {
     } else if (updateType) {
         path = path + '?kind=' + updateType;
     } else {
-        console.log("update without params")
+        console.log("err: update without params")
         next();
     }
-    postCall(path + '&access_token=' + djToken, null, function(err, obj) {
+    postCall(path, null, djToken, function(err, obj) {
         if (err) {
             console.log("err:" + err)
         } else {
-            console.log("song Updated: " + obj);
+            // console.log("song Updated: " + obj);
             next();
         }
     });
 }
 
 function updateSongType(next) {
-    console.log('updateSongType');
+    console.log('APIDOC Method: Update Song Type');
     updateSong(null, 'FROZEN', next);
 }
 
 function updateSongState(next) {
-    console.log('updateSongState');
+    console.log('APIDOC Method: Update Song State');
     updateSong('PLAYING', null, next);
 }
 
 function getPubListByGeoTag(next) {
-
+    console.log('APIDOC Method: Get PubList By Geo Tag');
+    var longitude = 12.0001,
+        latitude = 13.0001;
+    getCall('/pub?long=' + longitude + '&lat=' + latitude, userToken, function(err, obj) {
+        if (err) {
+            console.log("err:" + err);
+        } else {
+            // console.log("getPubListByGeoTag: " + obj);
+            next();
+        }
+    });
 }
 
 function testCall(next) {
-    console.log("test");
+    console.log("APIDOC Method: test");
     getCall('/test', function(err, obj) {
-        console.log("ret");
         if (err) {
             console.log(err)
         } else {
-            console.log("SUCCESS");
+            // console.log("SUCCESS");
             next();
         }
     });
@@ -412,7 +447,6 @@ function testCall(next) {
 
 // testCall();
 async.waterfall([
-    testCall,
     getAdminToken,
     registerOwner,
     getOwnerToken,
@@ -421,6 +455,7 @@ async.waterfall([
     registerDJ,
     getDJToken,
     createPlaylist(1),
+    createPlaylist(3),
     createPlaylist(2),
     getPlayList,
     setPlaylistActive,
@@ -429,10 +464,11 @@ async.waterfall([
     getCurrentPlaylist,
     upvoteSong,
     updateSongType,
-    updateSongState
+    updateSongState,
+    getPubListByGeoTag
 ], function(e, result) {
     if (e) {
         console.log(e);
-    }
+    } else {}
     console.log("DONE");
 });

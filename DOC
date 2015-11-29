@@ -1,6 +1,6 @@
 access_token can be sent as a header: 	Header : Authorization:[token] 
-										Query param ?access_token:[token]
 										Header(x-access-token):[token]
+										Query param ?access_token:[token]
 401 = wrong access_token
 403 = authorization failure // check token
 
@@ -42,3 +42,6 @@ P2[APIs to be added] remove song from playlist,
 
 update meta for song,
 setActive
+
+
+//song state changes

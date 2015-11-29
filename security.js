@@ -4,7 +4,7 @@ var jwt = require('jsonwebtoken'),
     config = require('./config');
 
 function decode(req, cb) {
-    token = req.get("Authorization") || req.query.access_token || req.body.access_token || req.headers['x-access-token'];;
+    token = req.get("Authorization") || req.query.access_token || req.body.access_token || req.headers['x-access-token'];
     jwt.verify(token, config.secret, function(err, decoded) {
         if (!err) {
             cb(null, decoded);
@@ -96,6 +96,7 @@ var security = module.exports = new function() {
                     });
                 } else if (!err && decoded && decoded.role === role) {
                     logger.info("Role: ", role);
+                    req.decoded = decoded;
                     next();
                 } else {
                     res.status(403).json({

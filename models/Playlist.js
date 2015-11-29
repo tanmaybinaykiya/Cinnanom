@@ -179,9 +179,10 @@ var PlaylistManager = function() {
 
 
     self.updateSongKind = function(playlistId, songId, kind, cb) {
+        // assert song state
         this.updateSong(playlistId, songId, function(song, playlist, callback) {
             if (song.kind == kind) {
-                callback(204);
+                callback(304);
             } else {
                 song.kind = kind;
                 callback(null, playlist);
@@ -190,9 +191,10 @@ var PlaylistManager = function() {
     }
 
     self.updateSongState = function(playlistId, songId, state, cb) {
+        // assert song state
          this.updateSong(playlistId, songId, function(song, playlist, callback) {
             if (song.state == state) {
-                callback(204);
+                callback(304);
             } else {
                 song.state = state;
                 callback(null, playlist);

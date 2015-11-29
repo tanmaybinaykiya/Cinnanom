@@ -10,7 +10,6 @@ function isValidPlaylistState(state) {
 
 var DJHandler = function() {
     var self = this;
-    var acceptedRoles = ['ADMIN', 'DJ'];
 
     self.createPlaylist = function(request, response) {
         if (request.params.pubId && request.body.name) {
@@ -151,7 +150,7 @@ var DJHandler = function() {
     };
 
     self.updateSong = function(req, res) {
-        if (req.params.pubId && req.params.playlistId && req.params.songId && req.query.state) {
+        if (req.params.pubId && req.params.playlistId && req.params.songId && req.query.state && !req.query.kind) {
             var playlistId = req.params.playlistId,
                 songId = req.params.songId,
                 state = req.query.state;
@@ -162,7 +161,7 @@ var DJHandler = function() {
                         error: err
                     });
                 } else {
-                    res.status(200).end();
+                    res.status(200).json({}).end();
                 }
             });
         } else if (req.params.pubId && req.params.playlistId && req.params.songId && req.query.kind) {
@@ -176,7 +175,7 @@ var DJHandler = function() {
                         error: err
                     });
                 } else {
-                    res.status(200).end();
+                    res.status(200).json({}).end();
                 }
             });
         } else {

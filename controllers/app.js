@@ -31,10 +31,10 @@ var AppHandler = function() {
     };
 
     self.getPubListByGeoTag = function(request, response) {
-        if (request.params.long && request.params.lat) {
+        if (request.query.long && request.query.lat) {
             var coords = [];
-            coords[0] = request.params.long;
-            coords[1] = request.params.lat;
+            coords[0] = request.query.long;
+            coords[1] = request.query.lat;
             Pub.findPubByGeoTag(coords, function(err, pubs) {
                 if (err) {
                     response.status(500).json({

@@ -65,9 +65,8 @@ router.route('/user/register')
 router.route('/pub/:pubId/playlist')
 	.get(security.authorize(Role.APP), appHandler.getCurrentPlaylist);
 
-router.route('/pub/:long/:lat')
+router.route('/pub')
 	.get(security.authorize(Role.APP), appHandler.getPubListByGeoTag);
-
 
 router.route('/test')
 	.get(function(req, res, next) {
