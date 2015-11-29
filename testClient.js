@@ -177,6 +177,7 @@ function getOwnerToken(next) {
 
 function registerPub(next) {
     console.log("APIDOC Method: Register Pub");
+    
     var reqObj = {
         name: 'Pub',
         address: 'PubAddress',

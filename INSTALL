@@ -1,0 +1,19 @@
+Assuming Ubuntu...
+
+Install MongoDB
+Install any MongoDB Manager. I used robomongo
+
+Create a database name grep
+Add a collection named users
+Add the following document in it: 
+	{
+	    "username" : "tanmay",
+	    "email" : "someEmail",
+	    "password" : "password",
+	    "role" : "ADMIN"
+	}
+
+Install node
+	"npm install" in the grep folder... ignore the linting errors for now. Have just added the linter. Will fix the errors soon.
+
+"node server.js" to start the server 

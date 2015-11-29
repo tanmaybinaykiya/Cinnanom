@@ -1,10 +1,10 @@
 var express = require('express'),
 	bodyParser = require('body-parser'),
-	mongoose = require('mongoose');
+	mongoose = require('mongoose'),
 	logger = require('./logger'),
 	apiHandler = require('./apiHandler');
 
-dbConnTimeout = setTimeout(function() {
+var dbConnTimeout = setTimeout(function () {
 	logger.error("Failed to set up DB in 5 seconds");
 	process.kill();
 }, 5000);
@@ -13,18 +13,8 @@ mongoose.connect('mongodb://localhost/grep');
 var db = mongoose.connection;
 var app;
 
-function configureDb(db) {
-	db.on('error', function() {
-		logger.error('connection error');
-		cleanup();
-	});
-
-	db.once('open', function(callback) {
-		logger.info("DB Setup Successful");
-		clearTimeout(dbConnTimeout);
-		configureApp();
-		startApp();
-	});
+function cleanup() {
+	mongoose.disconnect();
 }
 
 function configureApp() {
@@ -33,7 +23,7 @@ function configureApp() {
 
 	var port = process.env.PORT || 8080; // set our port
 	app.set('port', port);
-	app.disable('x-powered-by')
+	app.disable('x-powered-by');
 	app.use(bodyParser.urlencoded({
 		extended: true
 	}));
@@ -49,8 +39,18 @@ function startApp() {
 	logger.info("App is now listening at", app.get('port'));
 }
 
-function cleanup() {
-	mongoose.disconnect();
+function configureDb(db) {
+	db.on('error', function () {
+		logger.error('connection error');
+		cleanup();
+	});
+
+	db.once('open', function (callback) {
+		logger.info("DB Setup Successful");
+		clearTimeout(dbConnTimeout);
+		configureApp();
+		startApp();
+	});
 }
 
 configureDb(db);

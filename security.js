@@ -1,10 +1,10 @@
 var jwt = require('jsonwebtoken'),
-    logger = require('./logger'),
-    User = require('./models/User'),
-    config = require('./config');
+logger = require('./logger'),
+User = require('./models/User'),
+config = require('./config');
 
 function decode(req, cb) {
-    token = req.get("Authorization") || req.query.access_token || req.body.access_token || req.headers['x-access-token'];
+    var token = req.get("Authorization") || req.query.access_token || req.headers['x-access-token'];
     jwt.verify(token, config.secret, function(err, decoded) {
         if (!err) {
             cb(null, decoded);
