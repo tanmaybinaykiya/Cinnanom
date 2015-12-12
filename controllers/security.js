@@ -28,15 +28,9 @@ function verifyUser(username, email, password, callback) {
             logger.error('Username password do not match');
             callback('Username password do not match');
         } else if (user) {
-            console.log("USER FOUND: ", user)
             callback(null, user);
         } else {
-            logger.error('User not found: ' +
-                '{ ' +
-                'username:' + username + ', ' +
-                'email:' + email + ', ' +
-                'password:' + password +
-                '}');
+            logger.error('User not found: ' + username);
             callback('User not found');
         }
     });
@@ -49,7 +43,6 @@ var security = function() {
         var username = req.body.username,
             email = req.body.email,
             password = req.body.password;
-        logger.info("generating token for:: "+username)
         if (username && password) {
             verifyUser(username, email, password, function(err, user) {
                 if (!err && user) {
@@ -59,7 +52,6 @@ var security = function() {
                     }, config.secret, {
                         expiresIn: config.tokenExpiryInMinutes // expires in 1 hour
                     });
-                    logger.info("sending access_token: "+access_token)
                     res.status(200).json({
                         token: access_token
                     });

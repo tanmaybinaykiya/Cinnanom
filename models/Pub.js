@@ -2,7 +2,8 @@
 var mongoose = require('mongoose'),
 	PlaylistState = require('../enums/PlaylistState'),
 	async = require('async'),
-	logger = require('../util/logger');
+	logger = require('../util/logger'),
+	Errors = require('../util/Errors');
 
 var PubSchema = new mongoose.Schema({
 	name: String,
@@ -102,18 +103,18 @@ var PubManager = function() {
 					self.findPubById(pubId, cb);
 				},
 				function(pub, cb) {
-					try{
+					try {
 						var playlist = {
 							details: playlistDetails,
 							state: PlaylistState.INACTIVE
 						};
-						if(!pub.playlists){
-							pub.playlists=[];
+						if (!pub.playlists) {
+							pub.playlists = [];
 						}
 						pub.playlists.push(playlist);
 						logger.info("Pub: " + JSON.stringify(pub, null, 4))
 						pub.save(cb);
-					} catch (e){
+					} catch (e) {
 						cb(e)
 					}
 				}
@@ -143,47 +144,48 @@ var PubManager = function() {
 			})
 			.exec(function(err, pubs) {
 				if (err) {
-					logger.error("Error getting FilteredPlaylist", err.stack.split("\n"));
+					logger.error("Error getting FilteredPlaylist" + JSON.stringify(err, null, 4));
 					cb(err);
 				} else if (pubs && pubs[0] && pubs[0].playlists && pubs[0].playlists[0] && pubs[0].playlists[0].details) {
 					cb(null, pubs);
 				} else {
-					logger.error('Error getting filteredPlaylist');
-					logger.error('pubs: ' + pubs);
-					logger.error('pubs0: ' + pubs[0]);
-					logger.error('playlists: ' + pubs[0].playlists);
-					logger.error('playlists0: ' + pubs[0].playlists[0]);
-					logger.error('playlists0Details: ' + pubs[0].playlists[0].details);
-					cb('INTERNAL_ERROR');
+					logger.error('No filtered Playlistfound');
+					logger.error('Pubs: ' + JSON.stringify(pubs, null, 4));
+					cb(new Errors.EntityNotFound("Pub has no playlist with given filter"));
 				}
 			});
 	};
 
 	self.setActivePlaylist = function(pubId, playlistId, state, cb) {
 		var self = this;
-		async.waterfall([function(callback) {
-			self.getFilteredPlaylist(pubId, {
-				_id: playlistId
-			}, 5, callback);
-		}, function(pubs, callback) {
-			if (pubs && pubs[0] && pubs[0].playlists && pubs[0].playlists[0]) {
-				if (state === pubs[0].playlists[0].state) {
-					callback(204);
-				} else {
-					pubs[0].playlists[0].state = state;
-					callback(null, pubs[0]);
+		async.waterfall([
+				function(callback) {
+					self.getFilteredPlaylist(pubId, {
+						_id: playlistId
+					}, 5, callback);
+				},
+				function(pubs, callback) {
+					if (pubs && pubs[0] && pubs[0].playlists && pubs[0].playlists[0]) {
+						if (state === pubs[0].playlists[0].state) {
+							callback(204);
+						} else {
+							pubs[0].playlists[0].state = state;
+							callback(null, pubs[0]);
+						}
+					} else {
+						callback('Not FOUND');
+					}
+				},
+				function(pub, callback) {
+					pub.save(callback);
 				}
-			} else {
-				callback('Not FOUND');
-			}
-		}, function(pub, callback) {
-			pub.save(callback);
-		}], function(err, pub) {
-			if (err) {
-				logger.error("Error setActivePlaylist", err.stack.split("\n"));
-			}
-			cb(err, pub);
-		});
+			],
+			function(err, pub) {
+				if (err) {
+					logger.error("Error setActivePlaylist", err.stack.split("\n"));
+				}
+				cb(err, pub);
+			});
 	};
 
 	self.getActivePlaylist = function(pubId, limit, cb) {
@@ -196,28 +198,37 @@ var PubManager = function() {
 				},
 				limit: 1,
 				populate: {
-					path: 'details',
-					populate: {
-						path: 'songs'
-					}
+					path: 'details'
 				}
 			})
 			.exec(function(err, pub) {
 				if (err) {
 					logger.error("Error getActivePlaylist", err);
 					cb(err);
-				} else if (pub && pub.playlists && pub.playlists[0] && pub.playlists[0].details) {
-					// logger.info('getActivePlaylist: ' + JSON.stringify(pub, null, 4));
+				} else if (pub 
+						&& pub.playlists
+					 	&& pub.playlists[0] 
+						&& pub.playlists[0].details 
+						&& pub.playlists[0].details.songs 
+						&& pub.playlists[0].details.songs[0]
+						&& pub.playlists[0].details.songs[0].details 
+						&& pub.playlists[0].details.songs[0].details.song_name) {
 					cb(null, pub.playlists[0].details);
+				} else if (pub 
+						&& pub.playlists
+					 	&& pub.playlists[0] 
+						&& pub.playlists[0].details ) {
+					cb(new Errors.SongPopulationFailed("Failed to populate song"), pub.playlists[0].details);
 				} else {
-					logger.error('error getActivePlaylist');
-					logger.error('pubs: ' + pub);
-					logger.error('pubs0: ' + pub);
-					logger.error('playlists: ' + pub.playlists);
-					logger.error('playlists0: ' + pub.playlists[0]);
-					cb('INTERNAL_ERROR');
+					cb(new Errors.EntityNotFound("Failed to find active playlist"));
 				}
 			});
+	};
+
+	self.findPlaylistByName = function(pubId, playlistName, cb) {
+		self.getFilteredPlaylist(pubId, {
+			name: playlistName
+		}, 1, cb);
 	};
 };
 

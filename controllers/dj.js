@@ -3,7 +3,8 @@ var Playlist = require('../models/Playlist'),
     Pub = require('../models/Pub'),
     PlaylistState = require('../enums/PlaylistState'),
     async = require('async'),
-    logger = require('../util/logger');
+    logger = require('../util/logger'),
+    Errors = require('../util/Errors');
 
 function isValidPlaylistState(state) {
     return (state === PlaylistState.ACTIVE ||
@@ -16,11 +17,27 @@ var DJHandler = function() {
 
     self.createPlaylist = function(request, response) {
         if (request.params.pubId && request.body.name) {
-            async.waterfall([function(cb) {
-                    Playlist.createPlaylist(request.body, cb);
+            var playlist = request.body;
+            var pubId = request.params.pubId;
+            async.waterfall([
+                function(cb) {
+                    Pub.findPlaylistByName(pubId, playlist.name, function(err, pub){
+                        console.log("Pub.findPlaylistByName"+ err + pub);
+                        if (err && err instanceof Errors.EntityNotFound){
+                            cb(null)
+                        } else if (err){
+                            cb(err)
+                        } else {
+                            console.log("PUB::  ", JSON.stringify(pub, null, 4))
+                            cb('Playlist With Same name already exists')
+                        }
+                    });
                 },
-                function(playlist2, cb) {
-                    Pub.addPlaylist(request.params.pubId, playlist2, cb);
+                function(cb) {
+                    Playlist.createPlaylist(playlist, cb);
+                },
+                function(playlist, cb) {
+                    Pub.addPlaylist(pubId, playlist, cb);
                 }
             ], function(err, pub) {
                 if ((!err) && pub) {

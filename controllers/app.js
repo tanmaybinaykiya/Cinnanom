@@ -65,10 +65,20 @@ var AppHandler = function() {
             if (request.params.pageSize) {
                 limit = request.params.pageSize;
             }
-            Pub.getActivePlaylist(request.params.pubId, limit, function(err, playlist) {
-                if (err) {
-                    response.status(500).json({
-                        error: err
+            Pub.getActivePlaylist (request.params.pubId, limit, function(err, playlist) {
+                if (err && err instanceof Errors.SongPopulationFailed) {
+                    Playlist.findPlaylistById(playlist._id, function(e, pl){
+                        if(e || !pl){
+                           response.status(404).json({
+                               error: 'No Active Playlist found'
+                           }); 
+                        } else{
+                            response.status(200).json(pl); 
+                        }
+                    });
+                } else if (err && err instanceof Errors.EntityNotFound) {
+                    response.status(404).json({
+                        error: 'No Active Playlist found'
                     });
                 } else if (playlist) {
                     response.status(200).json(playlist);

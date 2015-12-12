@@ -9,10 +9,10 @@ http.globalAgent.maxSockets = Infinity
 var token = {}
 
 var Role = {
-    ADMIN: 'admin',
-    OWNER: 'owner',
-    APP: 'app',
-    DJ: 'dj',
+    ADMIN: 'ADMIN',
+    OWNER: 'OWNER',
+    APP: 'APP',
+    DJ: 'DJ',
 }
 
 function getTokenForRole(role) {
@@ -70,7 +70,8 @@ function APICall(path, obj, role, methodType, cb) {
         }
         res.on('data', function(d) {
             d = JSON.parse(d);
-            if (res.statusCode >= 500) {
+            
+            if (res.statusCode >= 404 ) {
                 cb(d);
                 return;
             } else {
@@ -117,7 +118,8 @@ function getCall(path, role, cb) {
         }
         res.on('data', function(d) {
             d = JSON.parse(d);
-            if (res.statusCode >= 500) {
+            logResponse(null, d);
+            if (res.statusCode >= 404) {
                 cb(d);
                 return;
             } else {
@@ -158,7 +160,8 @@ function postCall(path, obj, role, cb) {
         }
         res.on('data', function(d) {
             d = JSON.parse(d);
-            if (res.statusCode >= 500) {
+            logResponse(null, d);
+            if (res.statusCode >= 404) {
                 cb(d);
                 return;
             } else {
@@ -205,7 +208,8 @@ function putCall(path, obj, role, cb) {
         }
         res.on('data', function(d) {
             d=JSON.parse(d);
-            if(res.statusCode >=500){
+            logResponse(null, d);
+            if(res.statusCode >=404){
                 cb(d);
                 return;
             } else{
@@ -316,7 +320,8 @@ function getPubDetails(next) {
             console.log(err)
             next(err)
         } else {
-            // console.log("Pub Details: " + JSON.stringify(obj, null, 4))
+            console.log("Pub Details: " + JSON.stringify(obj, null, 4))
+            pub._id=obj._id;
             next()
         }
     })

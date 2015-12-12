@@ -13,7 +13,11 @@ var express = require('express'),
 var router = express.Router();
 
 router.use(function(req, res, next) {
-	logger.info("\n" + req.method + ": /api" + req.url + "\n\t" + JSON.stringify(req.body, null, 4));
+	logger.info("Method: "+ req.method)
+	logger.info("Path: /api" + req.url)
+	if(Object.keys(req.body).length){
+		logger.info("Obj: " +JSON.stringify(req.body, null, 4))
+	}
 	next();
 });
 
