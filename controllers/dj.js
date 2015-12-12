@@ -1,11 +1,14 @@
+'use strict';
 var Playlist = require('../models/Playlist'),
     Pub = require('../models/Pub'),
     PlaylistState = require('../enums/PlaylistState'),
     async = require('async'),
-    logger = require('../logger');
+    logger = require('../util/logger');
 
 function isValidPlaylistState(state) {
-    return (state === PlaylistState.ACTIVE || state === PlaylistState.DELETED || state === PlaylistState.INACTIVE);
+    return (state === PlaylistState.ACTIVE ||
+        state === PlaylistState.DELETED ||
+        state === PlaylistState.INACTIVE);
 }
 
 var DJHandler = function() {
@@ -150,34 +153,38 @@ var DJHandler = function() {
     };
 
     self.updateSong = function(req, res) {
-        if (req.params.pubId && req.params.playlistId && req.params.songId && req.query.state && !req.query.kind) {
+        if (req.params.pubId && req.params.playlistId && req.params.songId) {
             var playlistId = req.params.playlistId,
-                songId = req.params.songId,
-                state = req.query.state;
-            Playlist.updateSongState(playlistId, songId, state, function(err) {
-                if (err) {
-                    logger.error("Error updating song:", err.stack.split("\n"));
-                    res.status(404).json({
-                        error: err
-                    });
-                } else {
-                    res.status(200).json({}).end();
-                }
-            });
-        } else if (req.params.pubId && req.params.playlistId && req.params.songId && req.query.kind) {
-            var playlistId = req.params.playlistId,
-                songId = req.params.songId,
-                kind = req.query.kind;
-            Playlist.updateSongKind(playlistId, songId, kind, function(err) {
-                if (err) {
-                    logger.error("Error updating song: ",err.stack.split("\n"));
-                    res.status(404).json({
-                        error: err
-                    });
-                } else {
-                    res.status(200).json({}).end();
-                }
-            });
+                songId = req.params.songId;
+            if (req.query.state && !(req.query.kind)) {
+                var state = req.query.state;
+                Playlist.updateSongState(playlistId, songId, state, function(err) {
+                    if (err) {
+                        logger.error("Error updating song:", err.stack.split("\n"));
+                        res.status(404).json({
+                            error: err
+                        });
+                    } else {
+                        res.status(200).json({}).end();
+                    }
+                });
+            } else if (req.query.kind) {
+                var kind = req.query.kind;
+                Playlist.updateSongKind(playlistId, songId, kind, function(err) {
+                    if (err) {
+                        logger.error("Error updating song: ", err.stack.split("\n"));
+                        res.status(404).json({
+                            error: err
+                        });
+                    } else {
+                        res.status(200).json({}).end();
+                    }
+                });
+            } else {
+                res.status(404).json({
+                    error: 'Invalid params passed'
+                });
+            }
         } else {
             res.status(404).json({
                 error: 'Invalid params passed'

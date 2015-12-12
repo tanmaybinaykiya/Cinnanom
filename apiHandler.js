@@ -1,12 +1,13 @@
+'use strict';
 var express = require('express'),
 	jwt = require('jsonwebtoken'),
-	logger = require('./logger'),
+	logger = require('./util/logger'),
 	adminHandler = require('./controllers/admin'),
 	owner = require('./controllers/owner'),
 	djHandler = require('./controllers/dj'),
 	appHandler = require('./controllers/app'),
 	config = require('./config'),
-	security = require('./security'),
+	security = require('./controllers/security'),
 	Role = require('./enums/Role');
 
 var router = express.Router();

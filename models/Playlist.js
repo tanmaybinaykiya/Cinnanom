@@ -1,3 +1,4 @@
+'use strict';
 //flush playlist
 //flush votecounts
 var mongoose = require('mongoose'),
@@ -7,7 +8,7 @@ var mongoose = require('mongoose'),
     SongKind = require('../enums/SongType'),
     async = require('async'),
     PlaylistState = require('../enums/PlaylistState'),
-    logger= require('../logger');
+    logger= require('../util/logger');
 
 var PlaylistSchema = new mongoose.Schema({
     name: String,
@@ -25,10 +26,9 @@ var PlaylistSchema = new mongoose.Schema({
     strict: true
 });
 
-
 var Playlist = mongoose.model("Playlist", PlaylistSchema);
 
-var PlaylistManager = function() {
+var PlaylistManager = function () {
     var self = this;
 
     //sort songs by upvote count. if upvoteCount is missing, set it to 0
@@ -127,7 +127,7 @@ var PlaylistManager = function() {
     };
 
     self.updatePlaylistById = function(playlistId, playlist, cb) {
-        preProcess(playlist);
+        // preProcess(playlist);
         Playlist.findOneAndUpdate({
             _id: playlistId
         }, playlist, {
@@ -140,7 +140,7 @@ var PlaylistManager = function() {
                 cb(null, playlist);
             }
         });
-    }
+    };
 
     self.deletePlaylistById = function(playlistId, cb) {
         Playlist.findByIdAndRemove(playlistId, function(err) {
@@ -149,7 +149,7 @@ var PlaylistManager = function() {
             }
             cb(err);
         });
-    }
+    };
 
     self.updateSong = function(playlistId, songId, updateFunc, cb) {
         var self= this;
@@ -175,39 +175,39 @@ var PlaylistManager = function() {
             }
             cb(err, playlist);
         });
-    }
+    };
 
 
     self.updateSongKind = function(playlistId, songId, kind, cb) {
         // assert song state
         this.updateSong(playlistId, songId, function(song, playlist, callback) {
-            if (song.kind == kind) {
+            if (song.kind === kind) {
                 callback(304);
             } else {
                 song.kind = kind;
                 callback(null, playlist);
             }
         }, cb);
-    }
+    };
 
     self.updateSongState = function(playlistId, songId, state, cb) {
         // assert song state
          this.updateSong(playlistId, songId, function(song, playlist, callback) {
-            if (song.state == state) {
+            if (song.state === state) {
                 callback(304);
             } else {
                 song.state = state;
                 callback(null, playlist);
             }
         }, cb);
-    }
+    };
 
     self.upvoteSong = function(playlistId, songId, cb) {
          this.updateSong(playlistId, songId, function(song, playlist, callback) {
                 song.upvote_count = song.upvote_count + 1;
                 callback(null, playlist);
         }, cb);
-    }
-}
+    };
+};
 
 module.exports = new PlaylistManager();

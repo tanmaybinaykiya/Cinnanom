@@ -1,5 +1,5 @@
 module.exports = {
-    'secret': 'ei17ae19ia37yo',
-    'tokenExpiryInMinutes': 60,
+    'secret': 'ei11ae23ei58ae1321yo',
+    'tokenExpiryInMinutes': '1h',
     'mongoConnectUrl':''
 };

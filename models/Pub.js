@@ -1,7 +1,8 @@
+'use strict';
 var mongoose = require('mongoose'),
 	PlaylistState = require('../enums/PlaylistState'),
 	async = require('async'),
-	logger = require('../logger');
+	logger = require('../util/logger');
 
 var PubSchema = new mongoose.Schema({
 	name: String,
@@ -27,38 +28,26 @@ var Pub = mongoose.model("Pub", PubSchema);
 
 var PubManager = function() {
 	var self = this;
-	this.registerPub = function(pub, cb) {
+	self.registerPub = function(pub, cb) {
 		Pub.create(pub, function(err, doc) {
 			if (err) {
 				logger.error("Pub create:", err);
 			}
 			cb(err, doc);
 		});
-	}
+	};
 
-	this.deletePubById = function(pubId, cb) {
+	self.deletePubById = function(pubId, cb) {
 		Pub.findByIdAndRemove(pubId, function(err) {
 			if (err) {
 				logger.error("Error deleting pub by Id:", err.stack.split("\n"));
 			}
 			cb(err);
 		});
-	}
+	};
 
-	this.findPubById = function(pubId, cb) {
-		Pub.findById(pubId, function(err, pub) {
-			if (err) {
-				logger.error("Error finding Pub By Id", err.stack.split("\n"));
-				cb(err);
-			} else if (pub) {
-				cb(null, pub);
-			} else {
-				cb('No pub found');
-			}
-		});
-	}
 
-	this.updatePubById = function(pubId, pub, cb) {
+	self.updatePubById = function(pubId, pub, cb) {
 		Pub.findOneAndUpdate({
 			_id: pubId
 		}, pub, {
@@ -69,49 +58,79 @@ var PubManager = function() {
 			}
 			cb(err, pub);
 		});
-	}
+	};
 
-	this.findPubByGeoTag = function(coords, cb) {
-		var maxDistance = 5 / 6371;
-		Pub.find({
-				loc: {
-					$near: coords,
-					$maxDistance: maxDistance
-				}
-			})
-			.limit(10)
-			.exec(function(err, locations) {
-				if (err) {
-					logger.error("Error findPubByGeoTag", err.stack.split("\n"));
-				}
-				cb(err, locations);
-			});
-	}
+	self.findPubByFilter = function(filter, cb) {
+		Pub.find(filter)
+			.exec(cb);
+	};
 
-	this.addPlaylist = function(pubId, playlistDetails, cb) {
-		var self = this;
-		async.waterfall([function(cb) {
-			self.findPubById(pubId, cb);
-		}, function(pub, cb) {
-			playlist = {
-				details: playlistDetails,
-				state: PlaylistState.INACTIVE
-			}
-			pub.playlists.push(playlist);
-			pub.save(cb);
-		}], function(err, pubFound) {
-			if (!err && pubFound) {
-				cb(null, pubFound);
-			} else if (err) {
-				logger.error("Error adding playlist", error.stack.split("\n"));
+	self.findPubById = function(pubId, cb) {
+		this.findPubByFilter({
+			_id: pubId
+		}, function(err, pub) {
+			if (err) {
+				logger.error("Error finding Pub By Id", err.stack.split("\n"));
 				cb(err);
+			} else if (pub && pub[0]) {
+				cb(null, pub[0]);
 			} else {
-				cb('No Pub found with given id');
+				cb('No pub found');
 			}
 		});
-	}
+	};
 
-	this.getFilteredPlaylist = function(pubId, filters, limit, cb) {
+	self.findPubByGeoTag = function(coords, cb) {
+		var maxDistance = 5 / 6371;
+		this.findPubByFilter({
+			loc: {
+				$near: coords,
+				$maxDistance: maxDistance
+			}
+		}, function(err, locations) {
+			if (err) {
+				logger.error("Error findPubByGeoTag", err.stack.split("\n"));
+			}
+			cb(err, locations);
+		});
+	};
+
+	self.addPlaylist = function(pubId, playlistDetails, cb) {
+		var self = this;
+		async.waterfall([
+				function(cb) {
+					self.findPubById(pubId, cb);
+				},
+				function(pub, cb) {
+					try{
+						var playlist = {
+							details: playlistDetails,
+							state: PlaylistState.INACTIVE
+						};
+						if(!pub.playlists){
+							pub.playlists=[];
+						}
+						pub.playlists.push(playlist);
+						logger.info("Pub: " + JSON.stringify(pub, null, 4))
+						pub.save(cb);
+					} catch (e){
+						cb(e)
+					}
+				}
+			],
+			function(err, pubFound) {
+				if (!err && pubFound) {
+					cb(null, pubFound);
+				} else if (err) {
+					logger.error("Error adding playlist" + err);
+					cb(err);
+				} else {
+					cb('No Pub found with given id');
+				}
+			});
+	};
+
+	self.getFilteredPlaylist = function(pubId, filters, limit, cb) {
 		Pub.find({
 				_id: pubId
 			}).populate({
@@ -138,9 +157,9 @@ var PubManager = function() {
 					cb('INTERNAL_ERROR');
 				}
 			});
-	}
+	};
 
-	this.setActivePlaylist = function(pubId, playlistId, state, cb) {
+	self.setActivePlaylist = function(pubId, playlistId, state, cb) {
 		var self = this;
 		async.waterfall([function(callback) {
 			self.getFilteredPlaylist(pubId, {
@@ -155,7 +174,7 @@ var PubManager = function() {
 					callback(null, pubs[0]);
 				}
 			} else {
-				callback('Not FOUND')
+				callback('Not FOUND');
 			}
 		}, function(pub, callback) {
 			pub.save(callback);
@@ -165,9 +184,9 @@ var PubManager = function() {
 			}
 			cb(err, pub);
 		});
-	}
+	};
 
-	this.getActivePlaylist = function(pubId, limit, cb) {
+	self.getActivePlaylist = function(pubId, limit, cb) {
 		Pub.findOne({
 				_id: pubId
 			}).populate({
@@ -187,8 +206,8 @@ var PubManager = function() {
 				if (err) {
 					logger.error("Error getActivePlaylist", err);
 					cb(err);
-				} else if (pub && pub && pub.playlists && pub.playlists[0] && pub.playlists[0].details) {
-					logger.info('getActivePlaylist: ' + JSON.stringify(pub, null, 4));
+				} else if (pub && pub.playlists && pub.playlists[0] && pub.playlists[0].details) {
+					// logger.info('getActivePlaylist: ' + JSON.stringify(pub, null, 4));
 					cb(null, pub.playlists[0].details);
 				} else {
 					logger.error('error getActivePlaylist');
@@ -199,7 +218,7 @@ var PubManager = function() {
 					cb('INTERNAL_ERROR');
 				}
 			});
-	}
-}
+	};
+};
 
 module.exports = new PubManager();

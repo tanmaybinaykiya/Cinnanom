@@ -1,37 +1,28 @@
+'use strict';
 var User = require('../models/User'),
 	Role = require('../enums/Role'),
-	logger = require('../logger');
+	logger = require('../util/logger'),
+	Errors = require('../util/Errors');
 
+var AdminHandler = function () {
+	var self = this,
+		acceptedRoles = [Role.ADMIN];
 
-var AdminHandler = function() {
-	var self = this;
-	var acceptedRoles = [Role.ADMIN];
-
-	/**
-	 * @api {put} /user Create an Owner
-	 * @apiVersion 0.1.0
-	 * @apiName createOwner
-	 * @apiPermission Admin
-	 *
-	 * @apiDescription
-	 *
-	 * @apiParam {String} name Name of the User.
-	 *
-	 * @apiSuccess {String} id         The new Users-ID.
-	 *
-	 * @apiUse CreateUserError
-	 */
-	self.createOwner = function(request, response) {
+	self.createOwner = function (request, response) {
 		if (request.body.username && request.body.password) {
 			User.createUser({
 				username: request.body.username,
 				password: request.body.password,
-				email: '' || request.body.email,
+				email: request.body.email || '',
 				role: Role.OWNER
-			}, function(err, obj) {
-				if (err) {
-					response.status(404).json({
-						error: 'User or password not passed'
+			}, function (err, obj) {
+				if (err && err instanceof Errors.EntityAlreadyExists){
+					response.status(304).json({
+						error: 'User already exists'
+					});
+				} else if (err){
+					response.status(500).json({
+						error: err
 					});
 				} else if (obj) {
 					response.status(201).json(obj);
@@ -46,9 +37,9 @@ var AdminHandler = function() {
 		}
 	};
 
-	self.deleteOwner = function(request, response) {
+	self.deleteOwner = function (request, response) {
 		if (request.params.ownerId) {
-			User.deleteUserByRoleAndId(request.params.ownerId, Role.OWNER, function(err) {
+			User.deleteUserByRoleAndId(request.params.ownerId, Role.OWNER, function (err) {
 				if (err) {
 					response.status(404).json({
 						error: err

@@ -1,5 +1,6 @@
+'use strict';
 var mongoose = require('mongoose'),
-	logger = require('../logger');
+	logger = require('../util/logger');
 
 var SongSchema = new mongoose.Schema({
 	song_name: String,

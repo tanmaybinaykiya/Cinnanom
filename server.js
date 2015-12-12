@@ -1,7 +1,8 @@
+"use strict";
 var express = require('express'),
 	bodyParser = require('body-parser'),
 	mongoose = require('mongoose'),
-	logger = require('./logger'),
+	logger = require('./util/logger'),
 	apiHandler = require('./apiHandler');
 
 var dbConnTimeout = setTimeout(function () {
@@ -12,6 +13,11 @@ logger.info("Setting up DB...");
 mongoose.connect('mongodb://localhost/grep');
 var db = mongoose.connection;
 var app;
+
+function errorHandler(err, req, res, next) {
+  res.status(500);
+  res.render('error', { error: err });
+}
 
 function cleanup() {
 	mongoose.disconnect();
@@ -29,7 +35,12 @@ function configureApp() {
 	}));
 	app.use(bodyParser.json());
 	app.use('/api', apiHandler);
+	app.use(errorHandler);
 
+	app.on('error',function () {
+		logger.error('connection error');
+		cleanup();
+	});
 	logger.info("App setup Successful");
 }
 

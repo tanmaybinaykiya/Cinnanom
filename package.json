@@ -1,14 +1,22 @@
 {
   "name": "rest-service",
   "version": "0.0.1",
+  "scripts": {
+      "postinstall": "node_modules/nodelint/nodelint server.js controllers/ enums/ models/ apiHandler.js util/"
+    },
   "dependencies": {
     "body-parser": "^1.13.3",
     "express": "^4.6.1",
-    "jsonwebtoken": "^4.2.2",
+    "jsonwebtoken": "^5.0.0",
     "mongoose": "^4.2.7",
     "path": "0.12.7",
     "underscore": "^1.8.3",
     "async": "^1.5.0",
-    "nodelint": "^0.6.2"
+    "nodelint": "^0.6.2",
+    "winston":"^2.1.1",
+    "winston-daily-rotate-file":"^1.0.1"
+  },
+  "config": {
+      "unsafe-perm":true
   }
 }

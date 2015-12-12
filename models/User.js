@@ -1,28 +1,40 @@
+'use strict';
 var mongoose = require('mongoose'),
-    logger= require('../logger');
-var Schema = mongoose.Schema;
+    logger = require('../util/logger'),
+    Errors = require('../util/Errors'),
+    Schema = mongoose.Schema;
 
 var UserSchema = new Schema({
-        username: String,
-        password: String,
-        email: String,
-        role: String
-    }
-    , {
-        strict: true
-    }
-);
-
+    username: String,
+    password: String,
+    email: String,
+    role: String
+}, {
+    strict: true
+});
 
 var User = mongoose.model("User", UserSchema);
 
 var UserManager = function() {
     var self = this;
+
     self.createUser = function(user, cb) {
-        User.create(user).then(function(obj) {
-            cb(null, obj);
-        }, function(err) {
-            cb(err);
+        this.findByUsername(user.username, function(err) {
+            if (err instanceof Errors.EntityNotFound) {
+                User.create(user)
+                    .then(function(obj) {
+                        console.log("obj:"+ JSON.stringify(obj,null,4));
+                        cb(null, obj);
+                    }, function(err) {
+                        logger.error("Error creating User:", e);
+                        cb(err);
+                    });
+            } else if (err) {
+                logger.error("Error finding User:", err);
+                cb(err)
+            } else {
+                cb(new Errors.EntityAlreadyExists("User already exists"));
+            }
         });
     };
 
@@ -50,8 +62,7 @@ var UserManager = function() {
             } else if (user) {
                 cb(null, user);
             } else {
-                logger.error('User does not exist');
-                cb('User does not exist');
+                cb(new Errors.EntityNotFound('User does not exist'));
             }
         });
     };
@@ -59,7 +70,7 @@ var UserManager = function() {
     self.findByEmail = function(email, cb) {
         User.findOne({
             email: email
-        }, function(e, user) {
+        }, function(err, user) {
             if (err) {
                 logger.error("error findByEmail", err.stack.split("\n"));
                 cb(err);

@@ -1,19 +1,20 @@
+'use strict';
 var Pub = require('../models/Pub'),
     User = require('../models/User'),
     Roles = require('../enums/Role'),
-    logger = require('../logger');
+    logger = require('../util/logger'),
+    Errors = require('../util/Errors');
     
 var Owner = function() {
     var self = this;
-    var acceptedRoles = ['ADMIN', 'PUB'];
 
     self.registerPub = function(request, response) {
         if (request.body.name && request.body.loc) {
             Pub.registerPub({
                 name: request.body.name,
-                address: '' || request.body.address,
+                address: request.body.address || '',
                 loc: request.body.loc,
-                genre: '' || request.body.genre,
+                genre: request.body.genre || '',
                 playlists: request.body.playlists
             }, function(err, pub) {
                 if (err) {
@@ -99,10 +100,13 @@ var Owner = function() {
             User.createUser({
                 username: request.body.username,
                 password: request.body.password,
-                email: '' || request.body.email,
+                email: request.body.email || '',
                 role: Roles.DJ
             }, function(err, user) {
-                if (err) {
+                if (err && err instanceof Errors.EntityAlreadyExists) {
+                    response.status(304).end();
+                } else if (err) {
+                    logger.error("Error creating DJ Account: "+err)
                     response.status(404).json({
                         error: err
                     });
