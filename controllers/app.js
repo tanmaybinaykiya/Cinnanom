@@ -3,20 +3,23 @@ var Pub = require('../models/Pub'),
     User = require('../models/User'),
     Playlist = require('../models/Playlist'),
     Role = require('../enums/Role'),
-    logger = require('../util/logger');
+    logger = require('../util/logger'),
+    Errors = require('../util/Errors');
 
-var AppHandler = function () {
+var AppHandler = function() {
     var self = this;
 
-    self.register = function (request, response) {
+    self.register = function(request, response) {
         if (request.body.username && request.body.password) {
             User.createUser({
                 username: request.body.username,
                 password: request.body.password,
                 email: request.body.email || '',
                 role: Role.APP
-            }, function (err, user) {
-                if (err) {
+            }, function(err, user) {
+                if (err && err instanceof Errors.EntityAlreadyExists) {
+                    response.status(304).end();
+                } else if (err) {
                     response.status(500).json({
                         error: err
                     });
@@ -31,12 +34,12 @@ var AppHandler = function () {
         }
     };
 
-    self.getPubListByGeoTag = function (request, response) {
+    self.getPubListByGeoTag = function(request, response) {
         if (request.query.long && request.query.lat) {
             var coords = [];
             coords[0] = request.query.long;
             coords[1] = request.query.lat;
-            Pub.findPubByGeoTag(coords, function (err, pubs) {
+            Pub.findPubByGeoTag(coords, function(err, pubs) {
                 if (err) {
                     response.status(500).json({
                         error: err
@@ -54,7 +57,7 @@ var AppHandler = function () {
         }
     };
 
-    self.getCurrentPlaylist = function (request, response) {
+    self.getCurrentPlaylist = function(request, response) {
         // TODO 
         // implement filters
         if (request.params.pubId) {
@@ -62,7 +65,7 @@ var AppHandler = function () {
             if (request.params.pageSize) {
                 limit = request.params.pageSize;
             }
-            Pub.getActivePlaylist(request.params.pubId, limit, function (err, playlist) {
+            Pub.getActivePlaylist(request.params.pubId, limit, function(err, playlist) {
                 if (err) {
                     response.status(500).json({
                         error: err
@@ -82,14 +85,14 @@ var AppHandler = function () {
         }
     };
 
-    self.upvoteSong = function (request, response) {
+    self.upvoteSong = function(request, response) {
         // TODO
         // check pub-playlist association
         if (request.params.pubId && request.params.playlistId && request.params.songId) {
             var playlistId = request.params.playlistId,
                 songId = request.params.songId;
 
-            Playlist.upvoteSong(playlistId, songId, function (err, playlist) {
+            Playlist.upvoteSong(playlistId, songId, function(err, playlist) {
                 if (err) {
                     logger.error("Error Upvoting song: ", err.stack.split("\n"));
                     response.status(500).json({

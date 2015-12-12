@@ -423,7 +423,7 @@ function getPlayList(next) {
 }
 
 function setPlaylistActive(next) {
-    console.log('APIDOC Method: Set Playlist Active')
+    logMethod("Set Playlist Active")
     postCall('/pub/' + pub._id + '/playlist/' + playlist._id + '?state=ACTIVE', null, Role.DJ, function(err, obj) {
         if (err) {
             console.log("err:" + err)
@@ -436,19 +436,19 @@ function setPlaylistActive(next) {
 }
 
 function registerUser(next) {
-    console.log('APIDOC Method: Register User')
+    logMethod("Register User")
     var reqObj = {
         username: 'appName',
         password: 'appPassword',
         email: 'appEmail',
         geoLocation: [12, 13]
     }
+    userObj=reqObj
     putCall('/user/register', reqObj, null, function(err, obj) {
-        if (err) {
+        if (err && err!=304) {
             console.log(err)
             next(err)
         } else {
-            userObj = obj
             next()
         }
     })
@@ -533,17 +533,17 @@ function updateSong(updateState, updateType, next) {
 }
 
 function updateSongType(next) {
-    console.log('APIDOC Method: Update Song Type')
+    logMethod("Update Song Type")
     updateSong(null, 'FROZEN', next)
 }
 
 function updateSongState(next) {
-    console.log('APIDOC Method: Update Song State')
+    logMethod("Update Song State")
     updateSong('PLAYING', null, next)
 }
 
 function getPubListByGeoTag(next) {
-    console.log('APIDOC Method: Get PubList By Geo Tag')
+    logMethod("Get PubList By Geo Tag")
     var longitude = 12.0001,
         latitude = 13.0001
     getCall('/pub?long=' + longitude + '&lat=' + latitude, Role.APP, function(err, obj) {
