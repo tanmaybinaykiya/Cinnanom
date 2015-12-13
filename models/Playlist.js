@@ -8,7 +8,7 @@ var mongoose = require('mongoose'),
     SongKind = require('../enums/SongType'),
     async = require('async'),
     PlaylistState = require('../enums/PlaylistState'),
-    logger= require('../util/logger');
+    logger = require('../util/logger');
 
 var PlaylistSchema = new mongoose.Schema({
     name: String,
@@ -28,7 +28,7 @@ var PlaylistSchema = new mongoose.Schema({
 
 var Playlist = mongoose.model("Playlist", PlaylistSchema);
 
-var PlaylistManager = function () {
+var PlaylistManager = function() {
     var self = this;
 
     //sort songs by upvote count. if upvoteCount is missing, set it to 0
@@ -109,50 +109,60 @@ var PlaylistManager = function () {
     };
 
     self.findPlaylistById = function(playlistId, cb) {
-        Playlist.find({
-                _id: playlistId
-            })
-            .populate('songs.details')
-            .exec(function(err, playlists) {
-                if (playlists && playlists[0]) {
-                    cb(null, playlists[0]);
-                } else if (playlists) {
-                    cb("Something is wrong, playlists: ", playlists);
-                } else if (err) {
-                    cb(err);
-                } else {
-                    cb('No playlist found');
-                }
-            });
+        try {
+            Playlist.find({
+                    _id: playlistId
+                })
+                .populate('songs.details')
+                .exec(function(err, playlists) {
+                    if (playlists && playlists[0]) {
+                        cb(null, playlists[0]);
+                    } else if (err) {
+                        cb(err);
+                    } else {
+                        cb(new Errors.EntityNotFound("No Playlist with given id found"));
+                    }
+                });
+        } catch (e) {
+            cb(e);
+        }
     };
 
     self.updatePlaylistById = function(playlistId, playlist, cb) {
         // preProcess(playlist);
-        Playlist.findOneAndUpdate({
-            _id: playlistId
-        }, playlist, {
-            upsert: false
-        }, function(err, playlist) {
-            if (err) {
-                logger.error("Error updating playlist by Id:", err.stack.split("\n"));
-                cb(err);
-            } else {
-                cb(null, playlist);
-            }
-        });
+        try {
+            Playlist.findOneAndUpdate({
+                _id: playlistId
+            }, playlist, {
+                upsert: false
+            }, function(err, playlist) {
+                if (err) {
+                    logger.error("Error updating playlist by Id:", err.stack.split("\n"));
+                    cb(err);
+                } else {
+                    cb(null, playlist);
+                }
+            });
+        } catch (e) {
+            cb(e);
+        }
     };
 
     self.deletePlaylistById = function(playlistId, cb) {
-        Playlist.findByIdAndRemove(playlistId, function(err) {
-            if (err) {
-                logger.error("Error deleting Playlist By Id",err.stack.split("\n"));
-            }
-            cb(err);
-        });
+        try {
+            Playlist.findByIdAndRemove(playlistId, function(err) {
+                if (err) {
+                    logger.error("Error deleting Playlist By Id", err.stack.split("\n"));
+                }
+                cb(err);
+            });
+        } catch (e) {
+            cb(e);
+        }
     };
 
     self.updateSong = function(playlistId, songId, updateFunc, cb) {
-        var self= this;
+        var self = this;
         async.waterfall([function(callback) {
             self.findPlaylistById(playlistId, callback);
         }, function(playlist, callback) {
@@ -192,7 +202,7 @@ var PlaylistManager = function () {
 
     self.updateSongState = function(playlistId, songId, state, cb) {
         // assert song state
-         this.updateSong(playlistId, songId, function(song, playlist, callback) {
+        this.updateSong(playlistId, songId, function(song, playlist, callback) {
             if (song.state === state) {
                 callback(304);
             } else {
@@ -203,9 +213,9 @@ var PlaylistManager = function () {
     };
 
     self.upvoteSong = function(playlistId, songId, cb) {
-         this.updateSong(playlistId, songId, function(song, playlist, callback) {
-                song.upvote_count = song.upvote_count + 1;
-                callback(null, playlist);
+        this.updateSong(playlistId, songId, function(song, playlist, callback) {
+            song.upvote_count = song.upvote_count + 1;
+            callback(null, playlist);
         }, cb);
     };
 };

@@ -1,8 +1,8 @@
 var http = require('http')
 var async = require('async')
 
-var hostname = "localhost"
-var port = 8080
+var hostname = "ec2-54-213-150-140.us-west-2.compute.amazonaws.com"
+var port = 80
 
 http.globalAgent.maxSockets = Infinity
 
