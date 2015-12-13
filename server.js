@@ -27,7 +27,7 @@ function configureApp() {
 	logger.info("Setting up App...");
 	app = express();
 
-	var port = process.env.PORT || 8080; // set our port
+	var port = process.env.PORT || 80; // set our port
 	app.set('port', port);
 	app.disable('x-powered-by');
 	app.use(bodyParser.urlencoded({
