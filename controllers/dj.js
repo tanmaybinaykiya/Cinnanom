@@ -3,6 +3,7 @@ var Playlist = require('../models/Playlist'),
     Pub = require('../models/Pub'),
     PlaylistState = require('../enums/PlaylistState'),
     async = require('async'),
+    _ = require('underscore'),
     logger = require('../util/logger'),
     Errors = require('../util/Errors');
 
@@ -21,14 +22,14 @@ var DJHandler = function() {
             var pubId = request.params.pubId;
             async.waterfall([
                 function(cb) {
-                    Pub.findPlaylistByName(pubId, playlist.name, function(err, pub){
-                        console.log("Pub.findPlaylistByName"+ err + pub);
-                        if (err && err instanceof Errors.EntityNotFound){
+                    Pub.findPlaylistByName(pubId, playlist.name, function(err, pub) {
+                        logger.info("Pub[" + pubId + "]findPlaylistByName " + err);
+                        if (err && err instanceof Errors.EntityNotFound) {
                             cb(null)
-                        } else if (err){
+                        } else if (err) {
                             cb(err)
                         } else {
-                            console.log("PUB::  ", JSON.stringify(pub, null, 4))
+                            logger.info("PUB::  ", JSON.stringify(pub, null, 4))
                             cb('Playlist With Same name already exists')
                         }
                     });
@@ -92,15 +93,41 @@ var DJHandler = function() {
                     error: 'Invalid Input'
                 });
             }
-            Pub.setActivePlaylist(pubId, playlistId, state, function(err) {
-                if (err) {
-                    response.status(500).json({
-                        error: err
-                    });
-                } else {
-                    response.status(200).json({});
-                }
-            });
+            async.waterfall([
+                    /*function(cb) {
+                        var query = {
+                            'playlists.details.state': PlaylistState.ACTIVE
+                        };
+                        var updates = {
+                            'playlists.details.state': PlaylistState.INACTIVE
+                        };
+                        Pub.update(query, updates, {}, cb);
+                    },*/
+                    function(cb) {
+                        Pub.findPubById(pubId, cb);
+                    },
+                    function(pub, cb) {
+                        _.each(pub.playlists, function(playlist) {
+                            if (playlist.state === PlaylistState.ACTIVE) {
+                                playlist.state = PlaylistState.INACTIVE;
+                            }
+                        });
+                        Pub.updatePubById(pubId, pub, cb);
+                    },
+                    function(pub, cb) {
+                        Pub.setActivePlaylist(pubId, playlistId, state, cb);
+                    },
+                ],
+                function(err, obj) {
+                    if (err) {
+                        logger.error("Error updating playlist: ", JSON.stringify(err, null, 4))
+                        response.status(500).json({
+                            error: err
+                        });
+                    } else {
+                        response.status(200).json({});
+                    }
+                });
         } else {
             response.status(404).json({
                 error: 'Invalid Input'
@@ -177,8 +204,8 @@ var DJHandler = function() {
                 var state = req.query.state;
                 Playlist.updateSongState(playlistId, songId, state, function(err) {
                     if (err) {
-                        logger.error("Error updating song:", err.stack.split("\n"));
-                        res.status(404).json({
+                        logger.error("Error updating song:", JSON.stringify(err, null, 4));
+                        res.status(500).json({
                             error: err
                         });
                     } else {
@@ -189,8 +216,8 @@ var DJHandler = function() {
                 var kind = req.query.kind;
                 Playlist.updateSongKind(playlistId, songId, kind, function(err) {
                     if (err) {
-                        logger.error("Error updating song: ", err.stack.split("\n"));
-                        res.status(404).json({
+                        logger.error("Error updating song:", JSON.stringify(err, null, 4));
+                        res.status(500).json({
                             error: err
                         });
                     } else {
@@ -198,7 +225,7 @@ var DJHandler = function() {
                     }
                 });
             } else {
-                res.status(404).json({
+                res.status(400).json({
                     error: 'Invalid params passed'
                 });
             }

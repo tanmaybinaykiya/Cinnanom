@@ -1,9 +1,11 @@
 "use strict";
 var express = require('express'),
+	http = require('http'),
 	bodyParser = require('body-parser'),
 	mongoose = require('mongoose'),
 	logger = require('./util/logger'),
-	apiHandler = require('./apiHandler');
+	apiHandler = require('./lib/apiHandler'),
+	wsServer = require('./lib/wsServer');
 
 var dbConnTimeout = setTimeout(function () {
 	logger.error("Failed to set up DB in 5 seconds");
@@ -11,8 +13,10 @@ var dbConnTimeout = setTimeout(function () {
 }, 5000);
 logger.info("Setting up DB...");
 mongoose.connect('mongodb://localhost/grep');
-var db = mongoose.connection;
-var app;
+var db = mongoose.connection,
+	app, 
+	server,
+	myIP='127.0.0.1';
 
 function errorHandler(err, req, res, next) {
   res.status(500);
@@ -41,13 +45,21 @@ function configureApp() {
 		logger.error('connection error');
 		cleanup();
 	});
+	server=http.createServer(app)
 	logger.info("App setup Successful");
+}
+
+function configureWS(){
+	logger.info("configuring WS... ");
+	var WS = new wsServer(server);
+	logger.info("configured WS Successfully");
 }
 
 function startApp() {
 	logger.info("Starting up App...");
-	app.listen(app.get('port'));
+	server.listen(app.get('port'), myIP);
 	logger.info("App is now listening at", app.get('port'));
+	configureWS();
 }
 
 function configureDb(db) {

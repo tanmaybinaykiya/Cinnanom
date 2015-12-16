@@ -2,10 +2,9 @@
 var jwt = require('jsonwebtoken'),
     logger = require('../util/logger'),
     User = require('../models/User'),
-    config = require('../config');
+    config = require('../conf/config');
 
-function decode(req, cb) {
-    var token = req.get("Authorization") || req.query.access_token || req.headers['x-access-token'];
+function verifyToken(token, cb) {
     jwt.verify(token, config.secret, function(err, decoded) {
         if (!err) {
             cb(null, decoded);
@@ -18,6 +17,15 @@ function decode(req, cb) {
         }
     });
 }
+
+function extractTokenFromRequest(req) {
+    return req.get("Authorization") || req.headers['x-access-token'];
+}
+
+function extractTokenFromWSRequest(req) {
+    return req.headers["Authorization"];
+}
+
 
 function verifyUser(username, email, password, callback) {
     User.findByUsername(username, function(err, user) {
@@ -36,7 +44,7 @@ function verifyUser(username, email, password, callback) {
     });
 }
 
-var security = function() {
+var Security = function() {
     var self = this;
 
     self.generateToken = function(req, res) {
@@ -72,26 +80,69 @@ var security = function() {
         }
     };
 
-    self.authorize = function(role) {
+    self.authorizeRequests = function(role) {
         return function(req, res, next) {
-            decode(req, function(err, decoded) {
-                if (err) {
-                    res.status(401).json({
-                        error: err
-                    });
-                } else if (!err && decoded && decoded.role === role) {
-                    logger.info("Role: ", role);
-                    req.decoded = decoded;
-                    next();
-                } else {
-                    res.status(403).json({
-                        error: 'AUTHORIZATION FAILED'
-                    });
-                }
-            });
-
+            var token = extractTokenFromRequest(req);
+            if (token) {
+                verifyToken(token, function(err, decoded) {
+                    if (err) {
+                        res.status(401).json({
+                            error: err
+                        });
+                    } else if (decoded && decoded.role === role) {
+                        logger.info("Role: ", role);
+                        req.decoded = decoded;
+                        next();
+                    } else {
+                        res.status(403).json({
+                            error: 'AUTHORIZATION FAILED'
+                        });
+                    }
+                });
+            } else {
+                res.status(403).json({
+                    error: 'NO TOKEN PASSED'
+                });
+            }
         };
     };
+
+    self.authorizeWS = function(role) {
+        return function(req, done) {
+            logger.info('authorizing');
+            var token = extractTokenFromWSRequest(req);
+            if (token) {
+                logger.info('verifyToken');
+                verifyToken(token, function(err, decoded) {
+                    if (err) {
+                        logger.error(err);
+                        done({
+                            statusCode: 500,
+                            message: err.message
+                        });
+                    } else if (decoded && decoded.role === role) {
+                        logger.info('Allowing');
+                        req.decoded = decoded;
+                        done(null, decoded);
+                    } else {
+                        logger.info('Failed');
+
+                        done({
+                            statusCode: 403,
+                            message: 'Authorization Failed'
+                        });
+                    }
+                });
+            } else {
+                logger.info('token illa');
+                done({
+                    statusCode: 400,
+                    message: 'No token passed'
+                });
+            }
+        };
+    };
+
 };
 
-module.exports = new security();
+module.exports = new Security();

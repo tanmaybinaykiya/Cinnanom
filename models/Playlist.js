@@ -202,6 +202,17 @@ var PlaylistManager = function() {
 
     self.updateSongState = function(playlistId, songId, state, cb) {
         // assert song state
+/*        
+        async.waterfall([
+                function(callback){
+                    //move currently playing song to QUEUED
+                    //move currently NEXT song to 
+                },
+                function(){
+
+                },
+            ],function(err, song){})
+*/
         this.updateSong(playlistId, songId, function(song, playlist, callback) {
             if (song.state === state) {
                 callback(304);

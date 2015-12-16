@@ -71,12 +71,12 @@ var PubManager = function() {
 			_id: pubId
 		}, function(err, pub) {
 			if (err) {
-				logger.error("Error finding Pub By Id", err.stack.split("\n"));
+				logger.error("Error finding Pub", JSON.stringify(err, null, 4));
 				cb(err);
 			} else if (pub && pub[0]) {
 				cb(null, pub[0]);
 			} else {
-				cb('No pub found');
+				cb(new Errors.EntityNotFound("Pub not found"));
 			}
 		});
 	};
@@ -162,7 +162,7 @@ var PubManager = function() {
 				function(callback) {
 					self.getFilteredPlaylist(pubId, {
 						_id: playlistId
-					}, 5, callback);
+					}, 1, callback);
 				},
 				function(pubs, callback) {
 					if (pubs && pubs[0] && pubs[0].playlists && pubs[0].playlists[0]) {
@@ -188,7 +188,7 @@ var PubManager = function() {
 			});
 	};
 
-	self.getActivePlaylist = function(pubId, limit, cb) {
+	self.getActivePlaylist = function(pubId, cb) {
 		Pub.findOne({
 				_id: pubId
 			}).populate({
@@ -205,19 +205,9 @@ var PubManager = function() {
 				if (err) {
 					logger.error("Error getActivePlaylist", err);
 					cb(err);
-				} else if (pub 
-						&& pub.playlists
-					 	&& pub.playlists[0] 
-						&& pub.playlists[0].details 
-						&& pub.playlists[0].details.songs 
-						&& pub.playlists[0].details.songs[0]
-						&& pub.playlists[0].details.songs[0].details 
-						&& pub.playlists[0].details.songs[0].details.song_name) {
+				} else if (pub && pub.playlists && pub.playlists[0] && pub.playlists[0].details && pub.playlists[0].details.songs && pub.playlists[0].details.songs[0] && pub.playlists[0].details.songs[0].details && pub.playlists[0].details.songs[0].details.song_name) {
 					cb(null, pub.playlists[0].details);
-				} else if (pub 
-						&& pub.playlists
-					 	&& pub.playlists[0] 
-						&& pub.playlists[0].details ) {
+				} else if (pub && pub.playlists && pub.playlists[0] && pub.playlists[0].details) {
 					cb(new Errors.SongPopulationFailed("Failed to populate song"), pub.playlists[0].details);
 				} else {
 					cb(new Errors.EntityNotFound("Failed to find active playlist"));
@@ -230,6 +220,9 @@ var PubManager = function() {
 			name: playlistName
 		}, 1, cb);
 	};
-};
 
+	self.update = function(query, updates, options, cb){
+		Pub.findOneAndUpdate(query, updates, options, cb);
+	}
+};
 module.exports = new PubManager();
